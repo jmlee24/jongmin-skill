@@ -1,0 +1,8 @@
+{
+  "name": "dev-conductor",
+  "description": "다중 레인 개발 편성 — 지휘부는 코드를 쓰지 않고 쓰기/교차검증/리뷰 레인을 배선한다. vanilla Claude Code + Codex CLI만으로 동작.",
+  "version": "2.0.0",
+  "author": {
+    "name": "jongmin"
+  }
+}
