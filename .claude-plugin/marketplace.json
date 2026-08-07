@@ -1,13 +1,13 @@
 {
-  "name": "jongmin-claude-kit",
+  "name": "jongmin-skill",
   "owner": {
     "name": "jongmin"
   },
   "plugins": [
     {
-      "name": "dev-conductor",
-      "source": "./plugins/dev-conductor",
-      "description": "다중 레인 개발 편성 오케스트레이터 — 지휘부/쓰기/교차검증/리뷰 레인 분리로 검증 중심 개발"
+      "name": "jongmin-skills",
+      "source": "./plugins/jongmin-skills",
+      "description": "jongmin 개인 스킬 컬렉션 — 설치 한 번으로 전체 스킬 사용, 새 스킬은 autoUpdate로 전파"
     }
   ]
 }

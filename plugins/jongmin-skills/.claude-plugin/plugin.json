@@ -1,0 +1,8 @@
+{
+  "name": "jongmin-skills",
+  "description": "jongmin 개인 스킬 컬렉션. 현재: jongmin-dev-conductor (다중 레인 개발 편성). 스킬은 skills/ 아래에 계속 추가된다.",
+  "version": "1.0.0",
+  "author": {
+    "name": "jongmin"
+  }
+}
