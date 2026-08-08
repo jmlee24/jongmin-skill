@@ -1,10 +1,14 @@
 ---
 name: jongmin-loop
-description: 완료 조건이 명확한 작업을 완료까지 반복 실행할 때 사용한다. 사용자가 "loop", "루프", "끝까지", "완료까지 반복"을 명시적으로 요청할 때만 발동한다. 완료 조건을 오라클(테스트·검증 명령)로 표현할 수 없는 작업, 탐색·리서치성 작업에는 사용하지 않는다.
+description: 완료 조건이 명확한 작업을 완료까지 반복 실행하는 스킬. 슬래시 명령(/jongmin-skills:jongmin-loop)으로만 시작된다 — 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 완료 조건을 오라클(테스트·검증 명령)로 표현할 수 없는 작업, 탐색·리서치성 작업에는 사용하지 않는다.
 disable-model-invocation: true
 ---
 
 # jongmin-loop — 완료 조건 반복 실행
+
+이 스킬은 **슬래시 명령으로만 시작한다** — `disable-model-invocation`은 안전장치가 아니라
+슬래시 전용화다 (실측: 모델 호출·워크플로 복제 모두 하네스가 차단). 자연어로 루프를 원하는
+사용자에게는 `/jongmin-skills:jongmin-loop` 입력을 안내하라.
 
 ralph 계열 자율 루프의 자기 스킬 버전. 정체성: **one-task-per-loop + 이중 종료 게이트 + 서킷 브레이커**.
 시간 박스가 아니라 완료 조건으로 달린다 (시간 박스는 jongmin-sortie).
@@ -59,6 +63,13 @@ ralph 계열 자율 루프의 자기 스킬 버전. 정체성: **one-task-per-lo
 커밋 목록, 오라클 실행 결과 원문, 리뷰 판정 결과, 장부 최종 상태, config 변경 목록.
 
 ## 이력
+
+<details><summary>v1.1 (2026-08-08, 실전 검증 반영)</summary>
+
+발동 게이트 실측(모델 호출 차단 + 복제 금지 확인) 반영: description·본문을 슬래시 전용으로 정합.
+Codex 논의 합의: 플래그 유지가 맞고, "명시 요청 시 사용" 문구가 거짓 계약이었음.
+런타임 전체 검증(이중 종료 게이트·서킷 브레이커)은 사용자 슬래시 호출 대기 중.
+</details>
 
 <details><summary>v1 (2026-08-08)</summary>
 

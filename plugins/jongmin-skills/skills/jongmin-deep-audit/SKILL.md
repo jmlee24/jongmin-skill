@@ -9,6 +9,14 @@ disallowed-tools: Edit, Write, NotebookEdit
 정체성: **의심 카탈로그 → 항목별 이중 판정 → 반증 방법이 붙은 판정문**. read-only 고정 —
 frontmatter로 편집 도구를 차단한다. 수정은 감사 결과를 입력으로 conductor 웨이브가 담당한다.
 
+실측 기반 운용 제약 (2026-08-08 실전 검증):
+- **단독 턴에서 실행하라** — `disallowed-tools` 차단은 턴 스코프로 누적되어, 같은 턴에서 발동한
+  후속 스킬(예: handoff save의 Write)까지 차단된다.
+- **Bash는 읽기·검증 용도만** — frontmatter는 Bash를 막지 못하므로 read-only의 실질 방어선은
+  이 계약이다. 파일을 변경하는 Bash(리다이렉션 포함)는 감사 중 금지.
+- **CX 감사는 정적 분석 한정으로 취급** — codex 샌드박스에서 인터프리터 실행이 실패할 수 있고
+  (실측: python 실행 불가), 실행 기반 주장은 T1 실측 판정으로 넘긴다.
+
 티어: 카탈로그 T2 병렬, 독립 감사 CX, 불일치 판정 T1 실측 — [model-tiers.md](../../shared/model-tiers.md).
 
 ## 절차
@@ -42,6 +50,12 @@ CONFIRMED 항목의 conductor 웨이브 입력 변환 제안. 신규 문서 파�
 실행 메타(CX 모델 식별자 등)는 장부([ledger.md](../../shared/ledger.md))에 기록.
 
 ## 이력
+
+<details><summary>v1.1 (2026-08-08, 실전 검증 반영)</summary>
+
+실전 1회 완료 (skilltest 픽스처): 심은 결함 3종 전수 검출 + 추가 발굴, CX 오판 1건을 T1 실측으로
+REFUTED — 비대칭 규칙 실증. 운용 제약 3건 추가 (단독 턴, Bash 계약, CX 정적 분석 한정).
+</details>
 
 <details><summary>v1 (2026-08-08)</summary>
 

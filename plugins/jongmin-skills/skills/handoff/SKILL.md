@@ -11,7 +11,16 @@ conductor·loop·sortie의 "컴팩션·중단 후 재개" 갭을 이 스킬이 �
 
 ## save — 스냅샷 생성
 
+두 모드가 있다:
+- **`save` (기본, 이탈 저장)** — 스냅샷 후 활성 백그라운드 잡 정지, 생성한 worktree 제거.
+- **`save --keep-lanes` (중간 저장)** — 레인을 살려둔 채 체크포인트만 뜬다. 스냅샷에 레인 ID·시작
+  시각·데드라인·산출물 위치와 함께 **"레인을 정지하지 않았음" 경고를 반드시 기록**한다.
+  (실전 검증에서 기본 save가 진행 중인 CX 감사를 죽일 뻔한 사례에서 분리 — Codex 논의 합의안.)
+
 위치: `~/.claude/jongmin-ledgers/<프로젝트명>/<YYYY-MM-DD>-handoff.md` ([ledger.md](../../shared/ledger.md) 경로 규칙).
+
+> 턴 주의: deep-audit 등 `disallowed-tools`를 쓰는 스킬과 같은 턴이면 Write가 차단될 수 있다 (실측).
+> 이 경우 handoff는 별도 턴에서 실행하라.
 
 ```
 - [ ] 기준 상태: 브랜치, HEAD SHA, 워킹트리 상태(더티 파일 목록), 미커밋 diff 요약
@@ -23,7 +32,8 @@ conductor·loop·sortie의 "컴팩션·중단 후 재개" 갭을 이 스킬이 �
 - [ ] 민감정보 미포함 확인 (토큰·키 금지)
 ```
 
-스냅샷 후: 활성 백그라운드 잡은 정지, 생성한 worktree는 제거, 중단 상태를 사용자에게 보고.
+스냅샷 후 (기본 save만): 활성 백그라운드 잡 정지, 생성한 worktree 제거, 중단 상태를 사용자에게 보고.
+`--keep-lanes`면 레인 상태 요약만 보고하고 아무것도 정지하지 않는다.
 
 ## restore — 스냅샷 복원
 
@@ -36,6 +46,12 @@ conductor·loop·sortie의 "컴팩션·중단 후 재개" 갭을 이 스킬이 �
 ```
 
 ## 이력
+
+<details><summary>v1.1 (2026-08-08, 실전 검증 반영)</summary>
+
+실전 1회 완료 (검증 세션 중간 스냅샷). save를 기본(이탈)과 --keep-lanes(중간 체크포인트)로 분리 —
+기본 save의 무조건 레인 정지가 진행 중 CX 감사와 충돌한 사례에서. disallowed-tools 턴 전파 주의 추가.
+</details>
 
 <details><summary>v1 (2026-08-08)</summary>
 

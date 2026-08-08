@@ -1,6 +1,6 @@
 ---
 name: jongmin-sortie
-description: 사용자가 자리를 비우기 전에 시간 박스 자율 실행을 명시적으로 요청할 때 사용한다 ("sortie", "출격", "나갔다 올게", "묻지 말고 진행"). 사용자가 실시간으로 지켜보는 일반 작업에는 사용하지 않는다.
+description: 자리를 비우는 동안의 시간 박스 자율 실행 스킬. 슬래시 명령(/jongmin-skills:jongmin-sortie)으로만 시작된다 — 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 사용자가 실시간으로 지켜보는 일반 작업에는 사용하지 않는다.
 disable-model-invocation: true
 disallowed-tools: AskUserQuestion
 argument-hint: "<작업> [귀환 예정 시각]"
@@ -9,8 +9,12 @@ argument-hint: "<작업> [귀환 예정 시각]"
 # jongmin-sortie — 시간 박스 자율 출격
 
 정체성: **무질문 전진 + 결정 유예 장부 + 귀환 보고**. 완료 조건이 아니라 시간 박스로 달린다
-(완료 조건 반복은 jongmin-loop). 질문 금지는 프롬프트 지시가 아니라 frontmatter의
-`disallowed-tools: AskUserQuestion`으로 하드 강제된다.
+(완료 조건 반복은 jongmin-loop). **슬래시 명령으로만 시작한다** — 자연어로 요청받으면
+`/jongmin-skills:jongmin-sortie` 입력을 안내하라. 질문 금지는 프롬프트 지시가 아니라 frontmatter의
+`disallowed-tools: AskUserQuestion`으로 하드 강제된다 (동일 권한 계층의 차단이 실측 확인됨).
+
+> 턴 전파 주의: `disallowed-tools` 차단은 같은 턴의 **후속 스킬에도 전파**된다 (실측).
+> sortie 턴 안에서 다른 스킬을 발동해도 AskUserQuestion은 계속 차단된다 — sortie에서는 의도된 동작.
 
 티어: 지휘 T1(세션), 실행 위임 T2, CX 백그라운드 자문 — [model-tiers.md](../../shared/model-tiers.md).
 
@@ -60,6 +64,13 @@ argument-hint: "<작업> [귀환 예정 시각]"
 ```
 
 ## 이력
+
+<details><summary>v1.1 (2026-08-08, 실전 검증 반영)</summary>
+
+description·본문을 슬래시 전용으로 정합 (발동 게이트 실측). disallowed-tools 차단이 동일 권한
+계층에서 실제 작동함을 deep-audit Edit/Write 거부로 간접 실측 — 턴 전파 주의 추가.
+AskUserQuestion 직접 차단 실측은 사용자 슬래시 호출 대기 중.
+</details>
 
 <details><summary>v1 (2026-08-08)</summary>
 
