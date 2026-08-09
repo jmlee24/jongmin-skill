@@ -1,7 +1,7 @@
 {
   "name": "jongmin-skills",
   "description": "jongmin 개인 스킬 패밀리. 3중주(T1 지휘/T2 실행·리뷰/CX 교차) 구조: jongmin-dev-conductor(웨이브 편성), jongmin-loop(완료 조건 반복), jongmin-sortie(시간 박스 자율), jongmin-warplan(편성표 계획), jongmin-deep-audit(전면 감사), skill-forge(스킬 제작 게이트), handoff(세션 인수인계). 공용 부품은 shared/.",
-  "version": "1.3.1",
+  "version": "1.4.0",
   "author": {
     "name": "jongmin"
   }
