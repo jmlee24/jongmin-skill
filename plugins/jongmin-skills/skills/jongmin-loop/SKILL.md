@@ -62,8 +62,13 @@ argument-hint: "<작업> | cancel"
 ## 이중 종료 게이트 — 둘 다 통과해야 completed
 
 1. **장부 게이트**: 전 항목 완료 + 오라클(완료 조건 검증 명령) green
-2. **독립 판정 게이트**: `lane-reviewer`(T2)에 SHA 범위·diff·테스트 결과**만** 전달.
+2. **독립 판정 게이트**: `lane-reviewer`(T2)에 SHA 범위·diff·테스트 결과**만** 전달하고,
+   **동시에 CX 반박 자문을 상시 병렬 발진**한다 ([codex-lane.md](../../shared/codex-lane.md),
+   "이 완료 주장을 반박하라"). CX 소견은 자문 — T2 리뷰와 갈리면 T1이 실측 판정 (비대칭 규칙).
    critical 지적은 장부에 태스크로 추가하고 루프 재진입.
+
+반복 중 CX는 선택(등가성·오라클 강도가 걸린 태스크일 때만) — 매 반복 상시 투입은 반복당 수 분의
+비용 대비 이득이 없고, 최대 리스크인 허위 완료는 종료 게이트의 상시 CX가 막는다.
 
 통과 후에만 상태 파일에 `exit_signal: "completed"` + `exit_reason`·`oracle_status`·`review_status`를
 기록하고 정지한다. 실행자의 "완료했다"는 게이트 입력이 아니다.
