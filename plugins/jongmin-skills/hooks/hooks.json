@@ -1,4 +1,5 @@
 {
+  "description": "Stop 가드. node를 맨이름으로 부르면 훅 실행 셸(WSL dash 등)에 node가 없을 때 매 턴 에러가 난다. Windows 경로면 Windows node.exe를, POSIX 경로면 PATH의 node를 쓰도록 짝을 맞춘다 — 경로와 node 종류가 어긋나면 os.homedir()가 달라져 장부 위치가 틀어진다. 아무것도 못 찾으면 조용히 exit 0. JONGMIN_HOOK_NODE로 강제 지정 가능.",
   "hooks": {
     "Stop": [
       {
@@ -6,7 +7,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PLUGIN_ROOT\"/scripts/loop-stop-guard.mjs",
+            "command": "[ -n \"$CLAUDE_PLUGIN_ROOT\" ] || exit 0; s=$(printf '%s' \"$CLAUDE_PLUGIN_ROOT/scripts/loop-stop-guard.mjs\" | tr '\\\\' '/'); case \"$s\" in [A-Za-z]:/*) d=$(printf '%s' \"$s\" | cut -c1 | tr 'A-Z' 'a-z'); for n in \"$JONGMIN_HOOK_NODE\" \"/mnt/$d/Program Files/nodejs/node.exe\" \"/$d/Program Files/nodejs/node.exe\"; do [ -n \"$n\" ] && [ -x \"$n\" ] && exec \"$n\" \"$s\"; done; exit 0;; esac; [ -f \"$s\" ] || exit 0; command -v node >/dev/null 2>&1 || exit 0; exec node \"$s\"",
             "timeout": 10
           }
         ]
