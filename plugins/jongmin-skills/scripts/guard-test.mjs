@@ -13,12 +13,18 @@ const ACTIVE = path.join(SANDBOX, ".claude", "jongmin-ledgers", "active");
 const CWD_WIN = "C:\\Users\\jongm\\proj-a";
 const CWD_OTHER = "C:\\Users\\jongm\\proj-b";
 
-// 자기 침습 차단 단언용 — 실장부 파일 수를 실행 전에 고정
+// 자기 침습 차단 단언용 — 실장부 스냅샷(이름+크기+mtime)을 실행 전에 고정
+// 파일 수만 비교하면 내용 변경·동수 rename을 놓친다 (cx-s1 반영)
 const REAL_ACTIVE = path.join(os.homedir(), ".claude", "jongmin-ledgers", "active");
-function realLedgerCount() {
-  try { return fs.readdirSync(REAL_ACTIVE).length; } catch { return -1; }
+function realLedgerSnapshot() {
+  try {
+    return fs.readdirSync(REAL_ACTIVE).map((f) => {
+      const s = fs.statSync(path.join(REAL_ACTIVE, f));
+      return `${f}:${s.size}:${s.mtimeMs}`;
+    }).sort().join("|");
+  } catch { return "ABSENT"; }
 }
-const realBefore = realLedgerCount();
+const realBefore = realLedgerSnapshot();
 
 let pass = 0, fail = 0;
 const results = [];
@@ -48,6 +54,11 @@ function run(input = {}) {
 }
 function read(name) { return JSON.parse(fs.readFileSync(path.join(ACTIVE, name), "utf-8")); }
 function exists(name) { return fs.existsSync(path.join(ACTIVE, name)); }
+function raw(name) { return fs.readFileSync(path.join(ACTIVE, name), "utf-8"); }
+
+// 예외가 나도 샌드박스 정리와 실장부 게이트가 반드시 돈다 (cx-s1 반영)
+let crashed = null;
+try {
 
 // T01 상태 없음 -> allow
 reset();
@@ -87,25 +98,28 @@ check("T09 max-iter retire", run() === null && exists("a.json.stale"));
 reset(); state("a.json", { exit_signal: "completed" });
 check("T10 completed allow", run() === null && exists("a.json"));
 
-// T11 active:false -> allow
+// T11 active:false -> allow (+상태 무변조 — allow 경로의 조용한 mutate 탐지, cx-s1 반영)
 reset(); state("a.json", { active: false });
-check("T11 inactive allow", run() === null);
+let snap = raw("a.json");
+check("T11 inactive allow", run() === null && raw("a.json") === snap && !exists("a.json.stale"));
 
 // T12 cwd 불일치 -> allow (타 프로젝트 오염 방지)
 reset(); state("a.json", { cwd: CWD_OTHER });
 check("T12 cwd-mismatch allow", run() === null && read("a.json").iteration === 0);
 
-// T13 세션 불일치 -> allow
+// T13 세션 불일치 -> allow (+무변조)
 reset(); state("a.json");
-check("T13 session-mismatch allow", run({ session_id: "s2" }) === null);
+snap = raw("a.json");
+check("T13 session-mismatch allow", run({ session_id: "s2" }) === null && raw("a.json") === snap);
 
-// T14 schema 불일치 -> allow
+// T14 schema 불일치 -> allow (+무변조)
 reset(); state("a.json", { schema_version: 99 });
-check("T14 schema-mismatch allow", run() === null);
+snap = raw("a.json");
+check("T14 schema-mismatch allow", run() === null && raw("a.json") === snap);
 
-// T15 손상 JSON -> allow, 크래시 없음
+// T15 손상 JSON -> allow, 크래시 없음 (+파일 보존)
 reset(); fs.writeFileSync(path.join(ACTIVE, "bad.json"), "{corrupt");
-check("T15 corrupt allow", run() === null);
+check("T15 corrupt allow", run() === null && raw("bad.json") === "{corrupt");
 
 // T16 started_at 24h 초과 -> 은퇴
 reset(); state("a.json", { started_at: new Date(Date.now() - 25 * 3600 * 1000).toISOString() });
@@ -136,16 +150,25 @@ st = read("a.json"); st.progress_token = "x2"; fs.writeFileSync(path.join(ACTIVE
 r = run({ stop_hook_active: true });
 check("T20 block despite stop_hook_active", r?.decision === "block");
 
-// 샌드박스 정리 + 자기 침습 차단 단언 (check 수에 포함하지 않는 하드 게이트)
-fs.rmSync(SANDBOX, { recursive: true, force: true });
-const realAfter = realLedgerCount();
+} catch (e) {
+  crashed = e;
+} finally {
+  // 크래시 경로에서도 반드시 실행 — 잔여물·실장부 게이트 스킵 방지 (cx-s1 반영)
+  fs.rmSync(SANDBOX, { recursive: true, force: true });
+}
+
+// 자기 침습 차단 단언 (check 수에 포함하지 않는 하드 게이트)
+const realAfter = realLedgerSnapshot();
+console.log(results.join("\n"));
 if (realBefore !== realAfter) {
-  console.log(results.join("\n"));
-  console.log(`\nREAL LEDGER MUTATED: before=${realBefore} after=${realAfter}`);
+  console.log(`\nREAL LEDGER MUTATED:\n before=${realBefore}\n after=${realAfter}`);
   console.log(`\nTOTAL: ${pass} passed, ${fail + 1} failed`);
   process.exit(1);
 }
-
-console.log(results.join("\n"));
+if (crashed) {
+  console.log(`\nCRASH: ${crashed.message}`);
+  console.log(`\nTOTAL: ${pass} passed, ${fail + 1} failed`);
+  process.exit(1);
+}
 console.log(`\nTOTAL: ${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
