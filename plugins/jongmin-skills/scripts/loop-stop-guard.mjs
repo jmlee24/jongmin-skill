@@ -54,7 +54,17 @@ for (const name of files) {
   catch { log(`parse-fail ${name} -> allow`); continue; }
 
   if (st.schema_version !== SCHEMA_VERSION) continue;
-  if (st.active !== true || st.exit_signal) continue;
+  if (st.active !== true) continue;
+  if (st.exit_signal) {
+    // completed만 게이트한다 — 그 외 truthy exit_signal(blocked/failed/cancelled/stalled 등)은
+    // 전부 allow. 이 문언이 없으면 미래의 취소 신호가 무한 차단된다 (PRD S2 확정 문언).
+    if (st.exit_signal === "completed" && !(st.oracle_status && st.review_status)) {
+      log(`reject-completed ${name}: oracle_status/review_status missing`);
+      // 통과시키지 않고 아래 block 경로로 떨어뜨린다 — 빈 completed 되밀기
+    } else {
+      continue;
+    }
+  }
   if (norm(st.cwd) !== cwd) continue;
   if (st.owner_session_id && input.session_id && st.owner_session_id !== input.session_id) continue;
 
@@ -80,8 +90,8 @@ for (const name of files) {
   try { writeState(file, st); } catch { log(`write-fail ${name}`); }
 
   const reason = st.mode === "sortie"
-    ? `[jongmin-sortie 가드 ${st.iteration}/${max}] 데드라인 전 자의적 정지 금지. 유예 장부 규칙(보수 기본값+4요소 기록, 중대 판단은 CX 반박 자문 공동)으로 전진하라. 데드라인 도달 또는 전 갈래 보류 상태면 귀환 보고를 작성하고 state 파일에 exit_signal을 기록한 뒤 정지하라.`
-    : `[jongmin-loop 가드 ${st.iteration}/${max}] 완료 조건 미달성 상태의 정지 금지. 장부의 미완료 태스크를 계속 진행하고 매 반복 state의 progress_token(마지막 커밋 해시 또는 태스크 ID)을 갱신하라. 이중 종료 게이트(장부 완료 AND 독립 판정) 통과 후에만 exit_signal="completed"를 기록하고 정지하라. 진행 불능이면 exit_signal="blocked"|"failed" + exit_reason 기록 후 정지하라. 질문 금지 — 판단 필요 시 보수 기본값 + 유예 장부.`;
+    ? `[jongmin-sortie 가드 ${st.iteration}/${max}] 데드라인 전 자의적 정지 금지. 유예 장부 규칙(보수 기본값+4요소 기록, 중대 판단은 CX 반박 자문 공동)으로 전진하라. 데드라인 도달 또는 전 갈래 보류 상태면 귀환 보고를 작성하고 state 파일에 exit_signal을 기록한 뒤 정지하라 (completed면 oracle_status·review_status 동반 기록 필수 — 없으면 가드가 계속 되민다).`
+    : `[jongmin-loop 가드 ${st.iteration}/${max}] 완료 조건 미달성 상태의 정지 금지. 장부의 미완료 태스크를 계속 진행하고 매 반복 state의 progress_token(마지막 커밋 해시 또는 태스크 ID)을 갱신하라. 이중 종료 게이트(장부 완료 AND 독립 판정) 통과 후에만 exit_signal="completed"를 oracle_status·review_status와 함께 기록하고 정지하라 (두 필드 없는 completed는 가드가 되민다). 진행 불능이면 exit_signal="blocked"|"failed" + exit_reason 기록 후 정지하라. 질문 금지 — 판단 필요 시 보수 기본값 + 유예 장부.`;
 
   log(`block ${name} iter=${st.iteration}/${max} stop_hook_active=${!!input.stop_hook_active}`);
   process.stdout.write(JSON.stringify({ decision: "block", reason }));

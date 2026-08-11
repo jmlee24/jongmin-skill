@@ -94,8 +94,8 @@ check("T08 deadline retire", run() === null && exists("a.json.stale"));
 reset(); state("a.json", { iteration: 50 });
 check("T09 max-iter retire", run() === null && exists("a.json.stale"));
 
-// T10 exit_signal 기록 -> allow (정상 완료 경로)
-reset(); state("a.json", { exit_signal: "completed" });
+// T10 completed + 두 필드 -> allow (정상 완료 경로 — S2 계약)
+reset(); state("a.json", { exit_signal: "completed", oracle_status: "green", review_status: "approved" });
 check("T10 completed allow", run() === null && exists("a.json"));
 
 // T11 active:false -> allow (+상태 무변조 — allow 경로의 조용한 mutate 탐지, cx-s1 반영)
@@ -149,6 +149,24 @@ run();
 st = read("a.json"); st.progress_token = "x2"; fs.writeFileSync(path.join(ACTIVE, "a.json"), JSON.stringify(st));
 r = run({ stop_hook_active: true });
 check("T20 block despite stop_hook_active", r?.decision === "block");
+
+// T21~T23 빈 completed 되밀기 — oracle_status/review_status 없는 완료 선언은 block (S2 계약)
+reset(); state("a.json", { exit_signal: "completed", oracle_status: "green" });
+r = run();
+check("T21 completed w/o review_status block", r?.decision === "block");
+
+reset(); state("a.json", { exit_signal: "completed", review_status: "approved" });
+r = run();
+check("T22 completed w/o oracle_status block", r?.decision === "block");
+
+reset(); state("a.json", { exit_signal: "completed" });
+r = run();
+check("T23 completed w/o fields block", r?.decision === "block");
+
+// T24 cancelled -> allow (취소 경로 보존 — completed 외 truthy exit_signal은 전부 통과)
+reset(); state("a.json", { exit_signal: "cancelled" });
+snap = raw("a.json");
+check("T24 cancelled allow", run() === null && raw("a.json") === snap);
 
 } catch (e) {
   crashed = e;

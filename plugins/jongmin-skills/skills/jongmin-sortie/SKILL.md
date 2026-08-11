@@ -63,7 +63,9 @@ argument-hint: "<작업> [귀환 예정 시각]"
 - 착지 검증은 [landing-check.md](../../shared/landing-check.md) — 시간이 없어도 생략 금지,
   검증 못 한 작업은 완료가 아니라 "보류"로 분류
 - 데드라인 도달 → 새 작업 착수 금지, 진행 중 갈래만 착지시키고 귀환 보고 작성 →
-  상태 파일에 `exit_signal`("completed"|"blocked"|"failed") 기록 후 정지 (기록 전에는 가드가 정지를 되민다)
+  상태 파일에 `exit_signal`("completed"|"blocked"|"failed") 기록 후 정지 (기록 전에는 가드가 정지를 되민다).
+  **`completed`는 `oracle_status`·`review_status`를 동반 기록해야 통과한다** — 없으면 가드가
+  빈 완료 선언으로 보고 계속 되민다 (loop의 이중 종료 게이트와 같은 계약)
 
 ## 귀환 보고 (한 화면 — 사용자 배치 질문 1세트)
 
