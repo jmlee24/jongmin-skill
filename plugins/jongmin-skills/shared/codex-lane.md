@@ -10,11 +10,31 @@ T1 접합의 병목은 CX 실행이 아니라 **독해**다. CX 프롬프트에 
 - 장문 서술 금지 — 근거는 항목당 2~3문장
 - 자문 지위 명시: "자동 채택되지 않으며 T1이 실측으로 접합한다"
 
+산출 형식 실물 예시 (판정 가능한 수준의 축약본):
+
+```markdown
+1. **major** — retire()가 빈 completed를 은퇴시킬 때 exit_signal을 stalled로
+   덮지 않아 .stale에 허위 완료 기록이 남는다.
+   T1 검증법: 필드 없는 completed로 run()을 4회 호출 후 .stale JSON의 exit_signal 확인.
+2. **minor** — 로그는 실패 환경에서 무한 증가하나 수십 KB/day 수준.
+   T1 검증법: node를 숨긴 채 훅 100회 반복 후 wc -l hook.log.
+(이하 Top 5까지 — 항목당 2~3문장, 자동 채택되지 않음)
+```
+
 ## freshness rule — 백그라운드 리뷰 접합 전 신선도 검사
 
 접합 전에 확인한다: 리뷰 기준 SHA(review_base_sha) vs 현재 HEAD, 그리고
 touched files·계약(공개 API·스키마·픽스처) overlap. **overlap이 있으면 stale** —
 자동 접합 금지, T1이 재판정한다 (재발진 또는 diff 직접 확인).
+
+판정 실물 예시 (2026-08-11 실전 웨이브에서 발췌):
+
+```
+밀린 리뷰 기준 SHA = 7db63d5, 현재 HEAD까지 커밋 3건 착지. 그중 77d10f7이
+같은 파일군(orchestrator·tools)을 만짐 → stale 판정. 자동 접합 금지가 걸려
+T1이 6건을 하나씩 재판정 — 6건 전부 현재 HEAD에도 유효, §8은 리뷰가 지목한
+4개보다 실측이 많아(도구 7개) 범위 확대로 접합.
+```
 
 ## 발진 상한 — 접합 큐가 포화되면 던지기를 멈춘다
 
