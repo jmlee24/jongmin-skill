@@ -165,6 +165,23 @@ node plugins/jongmin-skills/scripts/validate.mjs
 
 부분 실행 `--only=3,4`, 다른 트리 검사 `--root=<dir>` (픽스처 음성 확인용).
 
+## 변경 이력
+
+### v1.6.0 (2026-08-11) — 신뢰성 배치
+
+사용자가 체감하는 동작 변화 단위로 기록 (실착지 커밋에서 도출):
+
+- **루프 상태 CLI 신설** — loop/sortie 상태 파일을 손 JSON 대신
+  `scripts/loop-state.mjs`(init/tick/complete/block/status)로만 조작. 스키마 위반 원천 차단
+- **completed 이중 게이트 기계 강제** — 오라클·리뷰 상태 기록 없는 완료 선언은 Stop 가드가
+  되밀고, 백스톱 은퇴 시에도 stalled로 정정 기록. 취소 경로(cancelled)는 보존
+- **훅 실패 가시화** — node 탐색 실패 시 hook.log에 기록 (가드 무음 무력화 감지)
+- **릴리스 검증 단일 진입점** — `scripts/validate.mjs` 5항(매니페스트·회귀 테스트 42종·링크·
+  description·용어) + 가드/state 회귀 테스트 repo 편입
+- **description 정합** — loop·sortie 서술형 통일, dev-conductor 압축. 변경 3종은 확정 문자열
+  완전 일치 게이트로 이후 드리프트 차단
+- **규약 실물 예시** — 유예 3분류(defer/gate/block)·CX Top5 산출·freshness 판정 예시 추가
+
 ## 새 스킬 추가하기
 
 `/jongmin-skills:skill-forge create <요구사항>` 사용 권장 — 제작 게이트·규약을 자동 강제한다.
