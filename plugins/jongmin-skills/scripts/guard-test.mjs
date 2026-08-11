@@ -130,9 +130,9 @@ reset(); state("a.json", { mode: "sortie" });
 r = run();
 check("T17 sortie message", r?.decision === "block" && /jongmin-sortie/.test(r.reason));
 
-// T18 atomic write 잔여물 없음
+// T18 atomic write 잔여물 없음 (pid 포함 고유 tmp명 포함 전수 검사)
 reset(); state("a.json"); run();
-check("T18 no tmp leftover", !exists("a.json.tmp"));
+check("T18 no tmp leftover", !fs.readdirSync(ACTIVE).some((f) => f.includes(".tmp")));
 
 // T19 E2E 시나리오: block(진행) -> block(진행) -> 완료 기록 -> allow
 reset(); state("a.json", { progress_token: "c1" });
@@ -175,6 +175,11 @@ run(); run(); run(); run();
 const staleFile = path.join(ACTIVE, "a.json.stale");
 const staleSt = fs.existsSync(staleFile) ? JSON.parse(fs.readFileSync(staleFile, "utf-8")) : null;
 check("T25 empty-completed retires as stalled", staleSt?.exit_signal === "stalled" && staleSt?.stale_reason === "no-progress" && run() === null);
+
+// T26 active:false로 쓴 빈 completed도 되민다 — 게이트 우회 차단 (cx-s3 반영)
+reset(); state("a.json", { active: false, exit_signal: "completed" });
+r = run();
+check("T26 inactive empty-completed still blocked", r?.decision === "block");
 
 } catch (e) {
   crashed = e;

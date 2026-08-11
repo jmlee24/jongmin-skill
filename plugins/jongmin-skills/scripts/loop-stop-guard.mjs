@@ -24,7 +24,8 @@ function norm(p) {
   return s.toLowerCase().replace(/\\/g, "/");
 }
 function writeState(file, st) {
-  const tmp = file + ".tmp";
+  // pid 포함 고유 tmp명 — 가드와 CLI가 같은 tmp를 동시에 쓰는 충돌 차단 (cx-s3)
+  const tmp = `${file}.${process.pid}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(st, null, 2));
   fs.renameSync(tmp, file);
 }
@@ -58,14 +59,16 @@ for (const name of files) {
   catch { log(`parse-fail ${name} -> allow`); continue; }
 
   if (st.schema_version !== SCHEMA_VERSION) continue;
-  if (st.active !== true) continue;
-  if (st.exit_signal) {
-    // completed만 게이트한다 — 그 외 truthy exit_signal(blocked/failed/cancelled/stalled 등)은
-    // 전부 allow. 이 문언이 없으면 미래의 취소 신호가 무한 차단된다 (PRD S2 확정 문언).
-    if (st.exit_signal === "completed" && !(st.oracle_status && st.review_status)) {
-      log(`reject-completed ${name}: oracle_status/review_status missing`);
-      // 통과시키지 않고 아래 block 경로로 떨어뜨린다 — 빈 completed 되밀기
-    } else {
+  // 빈 completed(필수 필드 누락)는 active 여부와 무관하게 되민다 — active:false로 쓰면
+  // 게이트를 우회하던 구멍 차단 (cx-s3). completed만 게이트, 그 외 truthy exit_signal
+  // (blocked/failed/cancelled/stalled 등)은 전부 allow — 취소 경로 보존 (PRD S2 확정 문언).
+  const emptyCompleted = st.exit_signal === "completed" && !(st.oracle_status && st.review_status);
+  if (emptyCompleted) {
+    log(`reject-completed ${name}: oracle_status/review_status missing`);
+    // 통과시키지 않고 아래 block 경로로 떨어뜨린다 — 빈 completed 되밀기
+  } else {
+    if (st.active !== true) continue;
+    if (st.exit_signal) {
       if (!KNOWN_SIGNALS.includes(st.exit_signal)) log(`unknown-exit-signal ${name}: ${st.exit_signal}`);
       continue;
     }

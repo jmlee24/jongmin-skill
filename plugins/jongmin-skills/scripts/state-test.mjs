@@ -11,7 +11,8 @@ const CLI = path.join(DIR, "loop-state.mjs");
 const GUARD = path.join(DIR, "loop-stop-guard.mjs");
 const SANDBOX = fs.mkdtempSync(path.join(os.tmpdir(), "state-test-"));
 const ACTIVE = path.join(SANDBOX, ".claude", "jongmin-ledgers", "active");
-const CWD = "C:\\Users\\jongm\\proj-x";
+// init의 --cwd 실존 검증(cx-s3)을 통과해야 하므로 실존 디렉터리인 샌드박스를 cwd로 쓴다
+const CWD = SANDBOX;
 
 const REAL_ACTIVE = path.join(os.homedir(), ".claude", "jongmin-ledgers", "active");
 function realLedgerSnapshot() {
@@ -54,7 +55,7 @@ try {
 let r = cli(["init", "proj-x-loop", "--mode", "loop", "--cwd", CWD, "--token", "t0"]);
 const st0 = read("proj-x-loop");
 check("ST01 init", r.code === 0 && st0.schema_version === 1 && st0.active === true && st0.mode === "loop" && st0.progress_token === "t0" && st0.exit_signal === null);
-check("ST02 no tmp leftover", !fs.existsSync(stateFile("proj-x-loop") + ".tmp"));
+check("ST02 no tmp leftover", !fs.readdirSync(ACTIVE).some((f) => f.includes(".tmp")));
 
 // ST03 중복 init 거부
 r = cli(["init", "proj-x-loop", "--mode", "loop", "--cwd", CWD]);
@@ -104,6 +105,16 @@ check("ST13 guard allows after cancel", guardRun() === null);
 // ST14 status 실행
 r = cli(["status", "proj-x-loop"]);
 check("ST14 status", r.code === 0 && r.out.includes("completed"));
+
+// ST15 상대·부재 cwd 거부 — 가드 조용한 비활성 차단 (cx-s3 반영)
+r = cli(["init", "rel-cwd", "--mode", "loop", "--cwd", "."]);
+const relRejected = r.code !== 0;
+r = cli(["init", "ghost-cwd", "--mode", "loop", "--cwd", "C:\\absent-dir-zzz"]);
+check("ST15 invalid cwd rejected", relRejected && r.code !== 0);
+
+// ST16 값 자리의 플래그 흡수 거부 (cx-s3 반영)
+r = cli(["init", "flag-eat", "--mode", "loop", "--cwd", "--token"]);
+check("ST16 flag-as-value rejected", r.code !== 0);
 
 } catch (e) {
   crashed = e;

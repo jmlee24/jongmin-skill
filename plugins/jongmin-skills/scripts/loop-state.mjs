@@ -28,13 +28,17 @@ function parseArgs(argv) {
   const opts = {};
   for (let i = 0; i < argv.length; i += 2) {
     if (!argv[i].startsWith("--")) die(`unexpected arg: ${argv[i]}`);
-    opts[argv[i].slice(2)] = argv[i + 1];
+    const val = argv[i + 1];
+    // 값 자리에 다음 플래그가 오면 거부 — "--reason --signal" 류 인자 흡수 차단 (cx-s3)
+    if (val === undefined || val.startsWith("--")) die(`missing value for ${argv[i]}`);
+    opts[argv[i].slice(2)] = val;
   }
   return opts;
 }
 function writeState(file, st) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  const tmp = file + ".tmp";
+  // pid 포함 고유 tmp명 — 가드와의 동시 쓰기 충돌 차단 (cx-s3)
+  const tmp = `${file}.${process.pid}.tmp`;
   fs.writeFileSync(tmp, JSON.stringify(st, null, 2));
   fs.renameSync(tmp, file);
 }
@@ -52,6 +56,9 @@ if (cmd === "init") {
   const mode = opts.mode;
   if (mode !== "loop" && mode !== "sortie") die("init requires --mode loop|sortie");
   if (!opts.cwd) die("init requires --cwd <abs path>");
+  // 상대경로·부재 경로면 가드의 cwd 매칭이 실패해 Stop 가드가 조용히 비활성화된다 (cx-s3)
+  if (!path.isAbsolute(opts.cwd)) die(`--cwd must be absolute: ${opts.cwd}`);
+  if (!fs.existsSync(opts.cwd)) die(`--cwd does not exist: ${opts.cwd}`);
   const deadlineH = Math.min(Number(opts["deadline-h"] || DEFAULT_DEADLINE_H[mode]), MAX_DEADLINE_H);
   if (!(deadlineH > 0)) die("invalid --deadline-h");
   const st = {

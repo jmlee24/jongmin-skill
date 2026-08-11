@@ -72,7 +72,7 @@ quick 게이트만 동기, deep 리뷰·CX는 백그라운드 누적 → 종료 
 
 - **완료 조건 달성에 필수**이고 스코프 안으로 해석 가능한 하위 작업만 진행 (분해는 확장이 아니다)
 - 그 외 발견물은 장부에 `out_of_scope_candidate`로 **기록만** — 작업 확장 금지
-- 범위 밖 수정 없이는 오라클 green이 불가능하면 `exit_signal: "blocked"` + 사유 기록 후 종료
+- 범위 밖 수정 없이는 오라클 green이 불가능하면 `loop-state.mjs block --signal blocked --reason <사유>` 종료
 - **완료 조건 자체가 런 중 모호해지면** 보수 전진이 아니라 `blocked` 종료다 — loop는 질문
   없이 목적지를 바꾸면 안 된다 (판단 지점의 유예 3분류에서 이 경우는 항상 `block`)
 
