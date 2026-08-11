@@ -4,8 +4,11 @@
 // 항목: 1) claude plugin validate (stdout warning 판정 — exit code 신뢰 금지)
 //       2) guard-test + state-test
 //       3) 링크 무결성 (shared 상호참조 + 동일 디렉터리 + README, 디렉터리 링크 허용)
-//       4) description 검사 — 4-A 변경 3종 확정 문자열 완전 일치 / 4-B 미변경 4종 회귀 lint
-import { execFileSync, execSync } from "node:child_process";
+//          한계: inline 링크만 검사 — reference-style([x][id])·anchor-only(#a)·<> 감싼 링크는
+//          미검사 (현 repo는 inline만 사용, cx-s6 defer)
+//       4) description 검사 — 4-A 변경 3종 확정 문자열 일치(UTF-8 + \r 제거 정규화 후 비교,
+//          그 외 정규화 금지 — PRD 확정) / 4-B 미변경 4종 회귀 lint
+import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -53,13 +56,14 @@ function descriptionIsSingleLine(root, skill) {
 }
 
 function check1(root) {
-  let out = "";
-  try {
-    out = execSync("claude plugin validate .", { cwd: root, encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
-  } catch (e) {
-    fail(1, `claude plugin validate spawn failed: ${String(e.message).split("\n")[0]}`);
+  // spawnSync로 stdout+stderr를 모두 판정 대상에 포함 — execSync 반환값은 stdout뿐이라
+  // stderr로 나오는 warning을 놓친다 (cx-s6)
+  const r = spawnSync("claude", ["plugin", "validate", "."], { cwd: root, encoding: "utf-8", shell: true });
+  if (r.error || r.status === null) {
+    fail(1, `claude plugin validate spawn failed: ${r.error?.message ?? "unknown"}`);
     return;
   }
+  const out = (r.stdout || "") + (r.stderr || "");
   if (/warning|⚠/i.test(out)) fail(1, "plugin validate emitted warnings (exit code is not trusted)");
   else pass(1, "plugin validate: no warnings");
 }
@@ -107,7 +111,8 @@ function check3(root) {
 }
 
 function extractTriggers(desc) {
-  return [...(desc ?? "").matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+  // ASCII 큰따옴표 + 곡선 따옴표 모두 추출 (cx-s6 — 한글 문서에서 “...”가 유입될 수 있다)
+  return [...(desc ?? "").matchAll(/["“]([^"”]+)["”]/g)].map((m) => m[1]);
 }
 function check4(root) {
   // 4-A 확정 문자열 완전 일치 (byte 비교, \r 제거 외 정규화 금지)
@@ -146,7 +151,13 @@ function main() {
     return m ? [m[1], m[2]] : [a, true];
   }));
   const root = args.root ? path.resolve(String(args.root)) : DEFAULT_ROOT;
-  const only = args.only ? String(args.only).split(",").map(Number) : [1, 2, 3, 4];
+  const VALID_CHECKS = [1, 2, 3, 4];
+  const only = args.only !== undefined ? String(args.only).split(",").map(Number) : VALID_CHECKS;
+  // 무효한 --only는 빈 검사 집합 = 공허 ALL PASS가 된다 — 즉시 거부 (cx-s6)
+  if (!only.length || only.some((n) => !VALID_CHECKS.includes(n))) {
+    console.log(`FAIL [args] invalid --only value (valid: ${VALID_CHECKS.join(",")})`);
+    process.exit(1);
+  }
   if (only.includes(1)) check1(root);
   if (only.includes(2)) check2(root);
   if (only.includes(3)) check3(root);
