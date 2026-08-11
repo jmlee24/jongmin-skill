@@ -65,7 +65,8 @@ argument-hint: "<작업> [귀환 예정 시각]"
 - 데드라인 도달 → 새 작업 착수 금지, 진행 중 갈래만 착지시키고 귀환 보고 작성 →
   상태 파일에 `exit_signal`("completed"|"blocked"|"failed") 기록 후 정지 (기록 전에는 가드가 정지를 되민다).
   **`completed`는 `oracle_status`·`review_status`를 동반 기록해야 통과한다** — 없으면 가드가
-  빈 완료 선언으로 보고 계속 되민다 (loop의 이중 종료 게이트와 같은 계약)
+  빈 완료 선언으로 보고 계속 되민다 (loop의 이중 종료 게이트와 같은 계약).
+  가드 백스톱 은퇴는 `stalled`로 자동 기록되며, 빈 completed도 은퇴 시 `stalled`로 정정된다
 
 ## 귀환 보고 (한 화면 — 사용자 배치 질문 1세트)
 

@@ -168,6 +168,14 @@ reset(); state("a.json", { exit_signal: "cancelled" });
 snap = raw("a.json");
 check("T24 cancelled allow", run() === null && raw("a.json") === snap);
 
+// T25 빈 completed 반복 -> 백스톱 은퇴 시 stalled로 정정 기록, 이후 allow (cx-s2 반영 —
+// 정정 없으면 .stale에 exit_signal:"completed"가 남아 허위 완료 기록이 된다)
+reset(); state("a.json", { exit_signal: "completed" });
+run(); run(); run(); run();
+const staleFile = path.join(ACTIVE, "a.json.stale");
+const staleSt = fs.existsSync(staleFile) ? JSON.parse(fs.readFileSync(staleFile, "utf-8")) : null;
+check("T25 empty-completed retires as stalled", staleSt?.exit_signal === "stalled" && staleSt?.stale_reason === "no-progress" && run() === null);
+
 } catch (e) {
   crashed = e;
 } finally {

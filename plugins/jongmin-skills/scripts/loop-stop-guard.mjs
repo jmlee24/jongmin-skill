@@ -10,6 +10,8 @@ const ACTIVE_DIR = path.join(os.homedir(), ".claude", "jongmin-ledgers", "active
 const LOG = path.join(os.homedir(), ".claude", "jongmin-ledgers", "hook.log");
 const SCHEMA_VERSION = 1;
 const STALE_MS = 24 * 3600 * 1000;
+// 알려진 종료 신호 — 미지의 truthy 신호도 allow하되(취소 경로 보존 계약) 로그로 관측한다
+const KNOWN_SIGNALS = ["completed", "blocked", "failed", "cancelled", "stalled"];
 
 function log(msg) {
   try { fs.appendFileSync(LOG, `${new Date().toISOString()} ${msg}\n`); } catch {}
@@ -29,7 +31,9 @@ function writeState(file, st) {
 function retire(file, st, reason) {
   try {
     st.active = false;
+    // 빈 completed(필수 필드 누락)는 완료로 기록될 수 없다 — 백스톱 은퇴 시 stalled로 정정 (cx-s2)
     if (!st.exit_signal) st.exit_signal = "stalled";
+    else if (st.exit_signal === "completed" && !(st.oracle_status && st.review_status)) st.exit_signal = "stalled";
     st.stale_reason = reason;
     st.updated_at = new Date().toISOString();
     writeState(file, st);
@@ -62,6 +66,7 @@ for (const name of files) {
       log(`reject-completed ${name}: oracle_status/review_status missing`);
       // 통과시키지 않고 아래 block 경로로 떨어뜨린다 — 빈 completed 되밀기
     } else {
+      if (!KNOWN_SIGNALS.includes(st.exit_signal)) log(`unknown-exit-signal ${name}: ${st.exit_signal}`);
       continue;
     }
   }
