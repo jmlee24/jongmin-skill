@@ -145,13 +145,38 @@ function check4(root) {
   if (!overlaps) pass("4B", "trigger substring overlap: none across 7 skills");
 }
 
+// 5) 용어 정합 — 규약 정본 용어의 금지 변형어를 탐지한다 (S10).
+//    변형어 자체를 매칭하므로 한국어 조사 결합에 영향받지 않는다 (변형어 뒤에 조사가
+//    붙어도 앞부분이 그대로 매칭됨). 정본 표기는 매칭되지 않도록 정규식을 좁게 유지.
+const TERM_VARIANTS = [
+  [/유예\s*삼분류/g, "유예 3분류"],
+  [/유예\s*3\s+분류/g, "유예 3분류"],
+  [/리뷰큐/g, "리뷰 큐"],
+  [/이중종료\s*게이트/g, "이중 종료 게이트"],
+  [/이중\s+종료게이트/g, "이중 종료 게이트"],
+  [/프레시니스/g, "freshness"],
+];
+function check5(root) {
+  let hits = 0;
+  for (const file of mdFiles(root)) {
+    const txt = readMd(file);
+    for (const [re, canonical] of TERM_VARIANTS) {
+      for (const m of txt.matchAll(re)) {
+        hits++;
+        fail(5, `term variant "${m[0]}" in ${path.relative(root, file)} (canonical: "${canonical}")`);
+      }
+    }
+  }
+  if (!hits) pass(5, "term consistency: no forbidden variants");
+}
+
 function main() {
   const args = Object.fromEntries(process.argv.slice(2).map((a) => {
     const m = a.match(/^--([a-z]+)=(.*)$/);
     return m ? [m[1], m[2]] : [a, true];
   }));
   const root = args.root ? path.resolve(String(args.root)) : DEFAULT_ROOT;
-  const VALID_CHECKS = [1, 2, 3, 4];
+  const VALID_CHECKS = [1, 2, 3, 4, 5];
   const only = args.only !== undefined ? String(args.only).split(",").map(Number) : VALID_CHECKS;
   // 무효한 --only는 빈 검사 집합 = 공허 ALL PASS가 된다 — 즉시 거부 (cx-s6)
   if (!only.length || only.some((n) => !VALID_CHECKS.includes(n))) {
@@ -162,6 +187,7 @@ function main() {
   if (only.includes(2)) check2(root);
   if (only.includes(3)) check3(root);
   if (only.includes(4)) check4(root);
+  if (only.includes(5)) check5(root);
   console.log(failures ? `\nRESULT: FAIL (${failures})` : "\nRESULT: ALL PASS");
   process.exit(failures ? 1 : 0);
 }

@@ -160,6 +160,8 @@ node plugins/jongmin-skills/scripts/validate.mjs
 ③ 링크 무결성 — shared 상호참조·동일 디렉터리·README 상대 링크 (디렉터리 링크 허용)
 ④ description 검사 — 변경 스킬은 확정 문자열 완전 일치(④-A), 미변경 스킬은 회귀 lint(④-B:
    단일 라인·비발동 절 존재·트리거 부분문자열 중첩 0건)
+⑤ 용어 정합 — 규약 정본 용어(유예 3분류, 리뷰 큐, 이중 종료 게이트, freshness)의
+   금지 변형어 탐지
 
 부분 실행 `--only=3,4`, 다른 트리 검사 `--root=<dir>` (픽스처 음성 확인용).
 
