@@ -181,6 +181,7 @@ node plugins/jongmin-skills/scripts/validate.mjs
 - **description 정합** — loop·sortie 서술형 통일, dev-conductor 압축. 변경 3종은 확정 문자열
   완전 일치 게이트로 이후 드리프트 차단
 - **규약 실물 예시** — 유예 3분류(defer/gate/block)·CX Top5 산출·freshness 판정 예시 추가
+- **마켓플레이스 표면 정비** — marketplace.json 최상위 description 추가 (validate warning 0)
 
 ## 새 스킬 추가하기
 
