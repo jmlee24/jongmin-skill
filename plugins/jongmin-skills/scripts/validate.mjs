@@ -149,17 +149,19 @@ function check4(root) {
 //    변형어 자체를 매칭하므로 한국어 조사 결합에 영향받지 않는다 (변형어 뒤에 조사가
 //    붙어도 앞부분이 그대로 매칭됨). 정본 표기는 매칭되지 않도록 정규식을 좁게 유지.
 const TERM_VARIANTS = [
-  [/유예\s*삼분류/g, "유예 3분류"],
-  [/유예\s*3\s+분류/g, "유예 3분류"],
+  // 같은 줄 공백([ \t])만 허용 — \s는 개행을 먹어 정상 줄바꿈("유예 3\n분류")을 오탐한다 (cx-s10)
+  [/유예[ \t]*삼분류/g, "유예 3분류"],
+  [/유예[ \t]*3[ \t]+분류/g, "유예 3분류"],
   [/리뷰큐/g, "리뷰 큐"],
-  [/이중종료\s*게이트/g, "이중 종료 게이트"],
-  [/이중\s+종료게이트/g, "이중 종료 게이트"],
+  [/이중종료[ \t]*게이트/g, "이중 종료 게이트"],
+  [/이중[ \t]+종료게이트/g, "이중 종료 게이트"],
   [/프레시니스/g, "freshness"],
 ];
 function check5(root) {
   let hits = 0;
   for (const file of mdFiles(root)) {
-    const txt = readMd(file);
+    // fenced code block은 스캔 제외 — 음성 확인 예시·금지어 인용이 릴리스를 막지 않게 (cx-s10)
+    const txt = readMd(file).replace(/```[\s\S]*?```/g, "");
     for (const [re, canonical] of TERM_VARIANTS) {
       for (const m of txt.matchAll(re)) {
         hits++;
