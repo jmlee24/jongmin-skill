@@ -52,8 +52,10 @@ quick 게이트만 동기, deep 리뷰·CX는 백그라운드 누적 → 종료 
 ```
 - [ ] 1. 장부에서 태스크 1개 (one-task-per-loop)
 - [ ] 2. T2 쓰기 레인 발진 — executor-prompt.md 5요소
-- [ ] 3. quick 게이트 (동기, 지휘부 직접) — landing-check.md 커밋 게이트 중 critical만:
-       테스트·빌드 실패 / 범위 이탈 / 공개 API·스키마·계약 변경 / 사용자 기존 변경 덮어쓰기
+- [ ] 3. quick 게이트 (동기, 지휘부 직접) — landing-check.md 커밋 게이트를 **전부 수행**
+       (impact-scope 테스트·결정론 게이트·diff 검토, 강도 축소 없음). 다음 태스크 진행의
+       차단 판정만 critical 기준: 테스트·빌드 실패 / 범위 이탈 / 공개 API·스키마·계약 변경 /
+       사용자 기존 변경 덮어쓰기. 백그라운드로 미루는 것은 분석 리뷰(deep·CX)뿐이다
 - [ ] 4. deep 리뷰·CX(트리거 해당 시)를 SHA 고정 백그라운드 발진 — 리뷰 큐 기록 (ledger.md 4절)
 - [ ] 5. 장부 갱신 + 상태 파일 progress_token 갱신 (마지막 커밋 해시 또는 태스크 ID —
        갱신하지 않으면 가드가 no-progress로 3회 후 루프를 은퇴시킨다)
