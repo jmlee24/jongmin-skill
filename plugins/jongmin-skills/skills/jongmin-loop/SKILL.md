@@ -1,6 +1,6 @@
 ---
 name: jongmin-loop
-description: 완료 조건이 명확한 작업을 완료까지 반복 실행하는 스킬. 슬래시 명령(/jongmin-skills:jongmin-loop)으로만 시작된다 — 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 완료 조건을 오라클(테스트·검증 명령)로 표현할 수 없는 작업, 탐색·리서치성 작업에는 사용하지 않는다.
+description: 완료 조건이 명확한 작업을 오라클 통과까지 반복 실행할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-loop)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 완료 조건을 오라클(테스트·검증 명령)로 표현할 수 없는 작업, 탐색·리서치성 작업에는 사용하지 않는다.
 disable-model-invocation: true
 disallowed-tools: AskUserQuestion
 argument-hint: "<작업> | cancel"

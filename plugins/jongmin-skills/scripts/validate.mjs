@@ -21,9 +21,9 @@ const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, "..", "..", "..");
 // 이 테이블은 validate.mjs 상수와 SKILL.md의 내부 일관성만 보증한다 — PRD 확정 문자열과의
 // 대조는 루프 종료 게이트(§5-6)가 수행한다.
 export const EXPECTED_DESCRIPTIONS = {
-  // "jongmin-loop": "...",
-  // "jongmin-sortie": "...",
-  // "jongmin-dev-conductor": "...",
+  "jongmin-loop": "완료 조건이 명확한 작업을 오라클 통과까지 반복 실행할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-loop)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 완료 조건을 오라클(테스트·검증 명령)로 표현할 수 없는 작업, 탐색·리서치성 작업에는 사용하지 않는다.",
+  "jongmin-sortie": "사용자가 자리를 비운 동안 시간 박스 안에서 자율 실행할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-sortie)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 사용자가 실시간으로 지켜보는 일반 작업에는 사용하지 않는다.",
+  // "jongmin-dev-conductor": S8이 채운다
 };
 
 const LINT_SKILLS = ["handoff", "jongmin-deep-audit", "jongmin-warplan", "skill-forge"];

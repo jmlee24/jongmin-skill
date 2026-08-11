@@ -1,6 +1,6 @@
 ---
 name: jongmin-sortie
-description: 자리를 비우는 동안의 시간 박스 자율 실행 스킬. 슬래시 명령(/jongmin-skills:jongmin-sortie)으로만 시작된다 — 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 사용자가 실시간으로 지켜보는 일반 작업에는 사용하지 않는다.
+description: 사용자가 자리를 비운 동안 시간 박스 안에서 자율 실행할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-sortie)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 사용자가 실시간으로 지켜보는 일반 작업에는 사용하지 않는다.
 disable-model-invocation: true
 disallowed-tools: AskUserQuestion
 argument-hint: "<작업> [귀환 예정 시각]"
