@@ -145,6 +145,24 @@ executor-prompt 5요소로 즉시 컴파일 가능해야 계획 완성으로 친
 - **handoff --keep-lanes**: 긴 웨이브 중간 체크포인트 (컴팩션 대비)
 - **주의**: deep-audit과 쓰기 필요 스킬을 같은 턴에 섞지 말 것 (도구 차단 턴 전파)
 
+## 릴리스 검증
+
+repo 루트에서 한 명령으로 전 항목을 검사한다:
+
+```
+node plugins/jongmin-skills/scripts/validate.mjs
+```
+
+① `claude plugin validate` — stdout warning 0건 판정 (이 명령은 warning이 있어도 exit 0을
+   반환하므로 exit code를 신뢰하지 않는다). **①의 실제 검증 범위는 마켓플레이스 매니페스트
+   1건뿐이다** — 스킬 본문·frontmatter는 검사하지 않는다.
+② Stop 가드·state CLI 회귀 테스트 (guard-test + state-test, tmpdir 격리·실장부 불변 단언 포함)
+③ 링크 무결성 — shared 상호참조·동일 디렉터리·README 상대 링크 (디렉터리 링크 허용)
+④ description 검사 — 변경 스킬은 확정 문자열 완전 일치(④-A), 미변경 스킬은 회귀 lint(④-B:
+   단일 라인·비발동 절 존재·트리거 부분문자열 중첩 0건)
+
+부분 실행 `--only=3,4`, 다른 트리 검사 `--root=<dir>` (픽스처 음성 확인용).
+
 ## 새 스킬 추가하기
 
 `/jongmin-skills:skill-forge create <요구사항>` 사용 권장 — 제작 게이트·규약을 자동 강제한다.
