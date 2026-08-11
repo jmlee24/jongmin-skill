@@ -23,7 +23,7 @@ const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, "..", "..", "..");
 export const EXPECTED_DESCRIPTIONS = {
   "jongmin-loop": "완료 조건이 명확한 작업을 오라클 통과까지 반복 실행할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-loop)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 완료 조건을 오라클(테스트·검증 명령)로 표현할 수 없는 작업, 탐색·리서치성 작업에는 사용하지 않는다.",
   "jongmin-sortie": "사용자가 자리를 비운 동안 시간 박스 안에서 자율 실행할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-sortie)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 사용자가 실시간으로 지켜보는 일반 작업에는 사용하지 않는다.",
-  // "jongmin-dev-conductor": S8이 채운다
+  "jongmin-dev-conductor": "커밋 3건 이상이 예상되는 다중 파일 구현 웨이브, 등가성 검증이 결과의 핵심인 무손실 최적화·리팩토링, 독립 교차검증과 리뷰 분리가 필요한 고위험 변경에 사용한다 (\"conductor\", \"레인 편성\", \"웨이브로 진행\" 요청 포함). 단일 파일 수정, 소규모 작업, 일상적인 멀티파일 리팩토링, 편성이라는 단어에 대한 질문에는 사용하지 않는다.",
 };
 
 const LINT_SKILLS = ["handoff", "jongmin-deep-audit", "jongmin-warplan", "skill-forge"];
