@@ -26,9 +26,18 @@ argument-hint: "<create|eval|pressure|improve> <스킬명 또는 요구사항>"
 ```
 
 초안 규약:
-- description은 **발동 조건만** ("~할 때 사용한다" + 트리거 어휘 + 부정 조건). 워크플로 요약 금지 —
-  모델이 본문 대신 요약만 따라가는 실패 방지 (superpowers 원칙). "언급하면" 금지, "요청하면"으로.
-- 본체 500줄 미만 + 상세는 보조 파일 분리. shared/ 부품은 참조하고 복붙하지 않는다.
+- description은 **무엇+언제** (공식 규칙): 제3인칭으로 스킬이 하는 일 한 줄 + 발동 조건
+  (트리거 어휘 + 부정 조건). 워크플로 상세 요약 금지 — 모델이 본문 대신 요약만 따라가는 실패
+  방지 (superpowers 원칙). "언급하면" 금지, "요청하면"으로. 발동 조건이 길면 `when_to_use`
+  필드로 분리 (description과 합산 1,536자 한도). 모호 명사(helper·utils·tools) 금지.
+- 본체 500줄 미만 + 상세는 보조 파일 분리. **참조는 SKILL.md에서 1단계 깊이만** (보조 파일이
+  또 다른 보조 파일을 참조하는 중첩 금지). 경로는 항상 포워드슬래시. shared/ 부품은 참조하고
+  복붙하지 않는다. 결정론이 필요한 절차는 산문 지시가 아니라 `scripts/`의 실행 스크립트로
+  (스크립트는 컨텍스트에 로드되지 않고 실행만 된다 — 자유도 설계: 접근이 다양해도 되면 텍스트
+  지시, 순서·일관성이 필수면 정확한 스크립트).
+- 예제는 input/output 쌍으로 — "이런 식으로"가 아니라 실제 입력과 기대 출력을 붙인다.
+- 질문 정책([question-policy.md](../../shared/question-policy.md)) 준수 — 발진 배치 1콜,
+  런 중 유예 3분류, 종료 배치. 스킬 본문에 즉문즉답 지시를 넣지 않는다.
 - 모델은 티어명(T1/T2/CX)으로만. `disable-model-invocation: true`는 **슬래시 명령 전용 스킬에만**
   쓴다 — 이 플래그는 안전장치가 아니라 자연어 발동의 완전 차단이다 (실측). 쓰는 스킬은
   description·본문에 슬래시 전용임을 명시해야 한다. 질문 금지류 계약은 `disallowed-tools`로 하드
@@ -70,6 +79,15 @@ push 금지선이 버티는지 본다.
 얇은 절차형 스킬: create 게이트(완화) + eval + 실전 1회.
 
 ## 이력
+
+<details><summary>v1.2 (2026-08-11, 공식 제작법 재대조)</summary>
+
+공식 문서(code.claude.com/docs/skills + platform best-practices) 재대조로 초안 규약 교정:
+description "발동 조건만" → "무엇+언제"(제3인칭, 공식 규칙 — 기존 규약이 과교정), when_to_use
+필드 도입, 참조 1단계 깊이 제한, scripts/ 자유도 설계, 예제 input/output 쌍, 질문 정책 준수 축
+추가. 미채용 보류: context:fork+background(스킬 자체의 백그라운드 서브에이전트화 — deep-audit
+후보, 실측 후 채용 판단).
+</details>
 
 <details><summary>v1.1 (2026-08-08, 실전 검증 반영)</summary>
 
