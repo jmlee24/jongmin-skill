@@ -36,10 +36,11 @@ argument-hint: "<작업> [귀환 예정 시각]"
 - [ ] 기준 SHA 기록, 유예 장부 생성 (ledger.md 규격, ~/.claude/jongmin-ledgers/)
 - [ ] 워킹트리 더티 여부 확인 — 더티면 기존 변경 목록을 장부에 기록해 이번 작업 변경과 구분
 - [ ] 권한 매니페스트 — 이번 작업이 쓸 도구·명령 범주 나열, 허용 안 된 갈래는 처음부터 보류 예정으로 표시
-- [ ] Stop 가드 상태 파일 생성 — `~/.claude/jongmin-ledgers/active/<프로젝트명>-sortie.json`
-      (`schema_version:1, active:true, mode:"sortie", cwd, started_at, deadline_epoch_ms=귀환시각(기본 2h),
-      max_iterations:50, iteration:0, no_progress_limit:3, progress_token, exit_signal:null` — atomic 작성).
-      이것이 자의적 턴 종료를 되미는 가드를 활성화한다. 매 갈래 착지마다 progress_token 갱신.
+- [ ] Stop 가드 상태 파일 생성 — **CLI로만** (손 JSON 금지, S3):
+      `node "<스킬 base dir>/../../scripts/loop-state.mjs" init <프로젝트명>-sortie --mode sortie
+      --cwd "<프로젝트 절대경로>" --token "<기준 SHA>" [--deadline-h 2]`
+      이것이 자의적 턴 종료를 되미는 가드를 활성화한다 (데드라인 기본 2h).
+      매 갈래 착지마다 `tick <프로젝트명>-sortie --token <갈래 커밋해시>` 로 갱신.
 ```
 
 ## 절대 금지선 (유예 불가 — 마주치면 그 갈래 보류)
@@ -62,10 +63,11 @@ argument-hint: "<작업> [귀환 예정 시각]"
 - CX 교차검증·테스트는 백그라운드 병렬 — [codex-lane.md](../../shared/codex-lane.md)
 - 착지 검증은 [landing-check.md](../../shared/landing-check.md) — 시간이 없어도 생략 금지,
   검증 못 한 작업은 완료가 아니라 "보류"로 분류
-- 데드라인 도달 → 새 작업 착수 금지, 진행 중 갈래만 착지시키고 귀환 보고 작성 →
-  상태 파일에 `exit_signal`("completed"|"blocked"|"failed") 기록 후 정지 (기록 전에는 가드가 정지를 되민다).
-  **`completed`는 `oracle_status`·`review_status`를 동반 기록해야 통과한다** — 없으면 가드가
-  빈 완료 선언으로 보고 계속 되민다 (loop의 이중 종료 게이트와 같은 계약).
+- 데드라인 도달 → 새 작업 착수 금지, 진행 중 갈래만 착지시키고 귀환 보고 작성 → 종료 기록 후 정지
+  (기록 전에는 가드가 정지를 되민다). 기록은 CLI로만:
+  완료는 `loop-state.mjs complete <프로젝트명>-sortie --oracle <검증 결과> --review <판정>` —
+  CLI가 두 필드를 필수로 강제하며, 없는 completed는 가드가 빈 완료 선언으로 보고 계속 되민다
+  (loop의 이중 종료 게이트와 같은 계약). 보류·실패는 `block --signal blocked|failed --reason <사유>`.
   가드 백스톱 은퇴는 `stalled`로 자동 기록되며, 빈 completed도 은퇴 시 `stalled`로 정정된다
 
 ## 귀환 보고 (한 화면 — 사용자 배치 질문 1세트)

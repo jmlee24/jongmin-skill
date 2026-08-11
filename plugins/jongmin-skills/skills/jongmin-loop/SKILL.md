@@ -23,7 +23,7 @@ argument-hint: "<작업> | cancel"
 ## Preflight (발진 직후)
 
 ```
-- [ ] `cancel` 인자면: 상태 파일에 active:false, exit_signal:"cancelled" 기록 후 현황 보고하고 종료
+- [ ] `cancel` 인자면: `node "<스킬 base dir>/../../scripts/loop-state.mjs" block <프로젝트명>-loop --signal cancelled --reason "사용자 취소"` 실행 후 현황 보고하고 종료
 - [ ] 완료 조건을 오라클로 확정 — 실행 가능한 검증 명령. 불가능하면 상태 파일을 만들지 말고 부적합 보고
 - [ ] 권한 매니페스트 — 이번 작업이 쓸 도구·경로·명령 범주를 나열하고, 허용 안 된 항목은
       발진 보고에 명시 (권한 프롬프트는 가드가 못 막는 유일한 정지 원인 — 사전에 드러내는 것이 방어)
@@ -32,17 +32,15 @@ argument-hint: "<작업> | cancel"
 - [ ] 상태 파일 생성 (아래) — 이것이 Stop 가드를 활성화한다
 ```
 
-상태 파일: `~/.claude/jongmin-ledgers/active/<프로젝트명>-loop.json` (atomic하게 작성)
+상태 파일은 **CLI로만 만든다** — 손 JSON 편집 금지 (스키마 위반 원천 차단, S3):
 
-```json
-{
-  "schema_version": 1, "active": true, "mode": "loop",
-  "cwd": "<프로젝트 절대경로>", "owner_session_id": "<세션ID, 모르면 생략>",
-  "started_at": "<ISO8601>", "deadline_epoch_ms": "<기본 now+4h, 최대 8h>",
-  "max_iterations": 50, "iteration": 0, "no_progress_limit": 3,
-  "progress_token": "<현재 HEAD 커밋 해시>", "exit_signal": null
-}
+```bash
+node "<스킬 base dir>/../../scripts/loop-state.mjs" init <프로젝트명>-loop \
+  --mode loop --cwd "<프로젝트 절대경로>" --token "<현재 HEAD 해시>" [--session <세션ID>] [--deadline-h 4]
 ```
+
+파일은 `~/.claude/jongmin-ledgers/active/<프로젝트명>-loop.json`에 생성되며(atomic),
+데드라인 기본 4h·최대 8h. 이후 갱신·종료도 같은 CLI의 `tick`/`complete`/`block` 서브커맨드로만.
 
 ## 루프 절차 — pipeline conservative
 
@@ -57,8 +55,8 @@ quick 게이트만 동기, deep 리뷰·CX는 백그라운드 누적 → 종료 
        차단 판정만 critical 기준: 테스트·빌드 실패 / 범위 이탈 / 공개 API·스키마·계약 변경 /
        사용자 기존 변경 덮어쓰기. 백그라운드로 미루는 것은 분석 리뷰(deep·CX)뿐이다
 - [ ] 4. deep 리뷰·CX(트리거 해당 시)를 SHA 고정 백그라운드 발진 — 리뷰 큐 기록 (ledger.md 4절)
-- [ ] 5. 장부 갱신 + 상태 파일 progress_token 갱신 (마지막 커밋 해시 또는 태스크 ID —
-       갱신하지 않으면 가드가 no-progress로 3회 후 루프를 은퇴시킨다)
+- [ ] 5. 장부 갱신 + `loop-state.mjs tick <프로젝트명>-loop --token <커밋해시|태스크ID>` —
+       갱신하지 않으면 가드가 no-progress로 3회 후 루프를 은퇴시킨다
 - [ ] 6. 파이프라이닝 판별 — 다음 태스크가 이번 태스크의 파일·신규 API·픽스처·스키마·설정과
        **disjoint면 즉시 1로**. 하나라도 겹치거나 미접합 major가 그 파일에 있으면
        해당 리뷰를 먼저 접합(freshness rule 확인)한 뒤 1로
@@ -90,8 +88,10 @@ quick 게이트만 동기, deep 리뷰·CX는 백그라운드 누적 → 종료 
 반복 중 CX는 루프 절차의 리스크 트리거 기반 — 매 반복 상시 투입은 접합 큐만 오염시키고,
 최대 리스크인 허위 완료는 종료 게이트의 상시 CX가 막는다.
 
-통과 후에만 상태 파일에 `exit_signal: "completed"` + `exit_reason`·`oracle_status`·`review_status`를
-기록하고 정지한다. 실행자의 "완료했다"는 게이트 입력이 아니다.
+통과 후에만 `loop-state.mjs complete <프로젝트명>-loop --oracle <오라클 결과> --review <리뷰 판정>
+[--reason <요약>]`을 실행하고 정지한다 — CLI가 두 필드를 필수 인자로 강제하며, 두 필드 없는
+completed는 가드가 되민다 (S2 계약). 실행자의 "완료했다"는 게이트 입력이 아니다.
+진행 불능 종료는 `loop-state.mjs block <프로젝트명>-loop --signal blocked|failed --reason <사유>`.
 
 ## 종료 사유 (exit_signal)
 
