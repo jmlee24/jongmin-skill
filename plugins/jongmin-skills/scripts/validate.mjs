@@ -50,7 +50,7 @@ function descriptionIsSingleLine(root, skill) {
   const i = lines.findIndex((l) => l.startsWith("description:"));
   if (i < 0) return false;
   const v = lines[i].slice("description:".length).trim();
-  if (v === "" || v === "|" || v === ">" || v.startsWith("|") || v.startsWith(">")) return false;
+  if (v === "" || v.startsWith("|") || v.startsWith(">")) return false;
   const next = lines[i + 1] ?? "";
   return !(next.startsWith(" ") || next.startsWith("\t"));
 }
