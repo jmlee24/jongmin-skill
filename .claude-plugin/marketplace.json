@@ -1,5 +1,6 @@
 {
   "name": "jongmin-skill",
+  "description": "jongmin 개인 스킬 마켓플레이스 — 3중주(T1 지휘/T2 실행·리뷰/CX 교차검증) 개발 워크플로 스킬 패밀리의 배포 지점",
   "owner": {
     "name": "jongmin"
   },
