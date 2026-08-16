@@ -126,7 +126,7 @@ git worktree add "<scratchpad>/lane-<task>" -b "lane/<task>" <발진 베이스>
 
 **3. 읽기 레인 병렬 발진** — CX는 **상시 2슬롯 병렬**이 기본이다 (스레드 분리):
 - CX-A: 다음 태스크 명세 생성 (명세가 딛는 근거의 생존성 반박 포함 — evidence-liveness.md)
-- CX-B: 방금 착지물 adversarial 반박
+- CX-B: 방금 착지물 adversarial 반박 (착지물당 1회 — 5절 리뷰 큐에 합류, 재발진 없음)
 - 고위험·등가성 작업이면 CX-C(아키텍처·인터페이스 충돌 전용) 추가 — 상한은 접합 큐 규칙
   ([codex-lane.md](../../shared/codex-lane.md) 발진 상한)이 결정한다. 산출 형식은 codex-lane.md
   표준을 따른다 (반박형은 Top 5, 명세형·규명형은 임무별 지정).
@@ -168,7 +168,8 @@ CX의 강점 배치는 생성·반박이다 — 착지물의 최종 리뷰는 �
 - **deep 리뷰**: `lane-reviewer` 전면 리뷰, 집중 축 지정(논증의 구멍, 전제 성립, 오라클 강도)
 - quick·deep 모두 [reviewer-prompt.md](../../shared/reviewer-prompt.md) `change` 모드 템플릿을 채워
   발진한다 (SHA 범위·축·테스트 원문 — executor 자기 보고 전달 금지)
-- **CX adversarial**: 고위험·등가성·오라클 작업에서 반박 레인 추가
+- **CX adversarial**: 3절 CX-B가 이미 이 착지물을 반박 중이면 재발진하지 않고 큐에 합류 —
+  고위험·등가성·오라클 작업의 추가분은 CX-C(아키텍처·인터페이스 충돌)만
 
 상한: 읽기 레인 총 3개 기본(예외 4개), 커밋별 deep 리뷰 동시 2개까지 — 그 이상은 중복 지적과
 접합 순서 꼬임으로 이득이 준다. **판정 큐는 T1 하나**: 중복 지적은 T1이 병합. 접합 시점은

@@ -60,12 +60,16 @@ argument-hint: "<작업> [귀환 예정 시각]"
   걸린 결정은 CX([codex-lane.md](../../shared/codex-lane.md), 백그라운드)에 **보수 기본값의
   반박과 되돌리는 법만** 생성시킨다. CX가 결정을 대행하지 않는다 — 소견·채택 여부를 장부에
   기록하고 T1이 판단. 자동 채택 금지는 동일. CX 불가 환경이면 보수 기본값으로.
-- CX 교차검증·테스트는 백그라운드 병렬 — [codex-lane.md](../../shared/codex-lane.md)
+- CX **산출물 반박**은 결정 유예 자문과 별도다 — 착지 SHA 범위·diff·원시 테스트 결과를
+  맹검 입력([reviewer-prompt.md](../../shared/reviewer-prompt.md)와 같은 입력). 저위험 착지물은
+  누적 배치 1회, 보안·데이터·마이그레이션·공개 API·넓은 diff·오라클 모호는 즉시 발진.
+  데드라인까지 미도착이면 고위험 갈래는 완료가 아니라 보류로 귀환
 - 착지 검증은 [landing-check.md](../../shared/landing-check.md) — 시간이 없어도 생략 금지,
   검증 못 한 작업은 완료가 아니라 "보류"로 분류
 - 데드라인 도달 → 새 작업 착수 금지, 진행 중 갈래만 착지시키고 귀환 보고 작성 → 종료 기록 후 정지
   (기록 전에는 가드가 정지를 되민다). 기록은 CLI로만:
-  완료는 `loop-state.mjs complete <프로젝트명>-sortie --oracle <검증 결과> --review <판정>` —
+  완료는 `loop-state.mjs complete <프로젝트명>-sortie --oracle <검증 결과> --review <판정>`
+  (`--review`는 T1이 T2/CX 소견을 접합한 판정 — 임의 문자열 금지) —
   CLI가 두 필드를 필수로 강제하며, 없는 completed는 가드가 빈 완료 선언으로 보고 계속 되민다
   (loop의 이중 종료 게이트와 같은 계약). 보류·실패는 `block --signal blocked|failed --reason <사유>`.
   가드 백스톱 은퇴는 `stalled`로 자동 기록되며, 빈 completed도 은퇴 시 `stalled`로 정정된다
