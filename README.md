@@ -30,8 +30,9 @@
    (유예 3분류 defer/gate/block), 종료 시 유예 결정 배치 1세트. 즉문즉답 금지.
 4. **공용 부품** ([shared/](plugins/jongmin-skills/shared/)) — model-tiers(티어 정의) /
    codex-lane(Codex CLI 실행 패턴 + 산출 Top 5 표준·freshness rule) / executor-prompt(쓰기
-   레인 5요소 템플릿) / landing-check(착지 검증 체크리스트) / question-policy(질문 배치) /
-   ledger(진행·유예 장부 규격, `~/.claude/jongmin-ledgers/`)
+   레인 5요소 템플릿) / reviewer-prompt(리뷰 레인 호출 템플릿 — change·completion 모드) /
+   evidence-liveness(인용 근거 생존성 검증 — LIVE만 확정 전제) / landing-check(착지 검증
+   체크리스트) / question-policy(질문 배치) / ledger(진행·유예 장부 규격, `~/.claude/jongmin-ledgers/`)
 
 ## 스킬 목록
 
@@ -166,6 +167,27 @@ node plugins/jongmin-skills/scripts/validate.mjs
 부분 실행 `--only=3,4`, 다른 트리 검사 `--root=<dir>` (픽스처 음성 확인용).
 
 ## 변경 이력
+
+### v1.8.0 (2026-08-14) — 근거 생존성 검증 · 리뷰 호출 템플릿
+
+사용자 제안 2건을 Claude+CX 독립 판단 후 교차 대조해 반영 (핵심 판정 일치):
+
+- **근거 생존성 검증 신설** ([shared/evidence-liveness.md](plugins/jongmin-skills/shared/evidence-liveness.md)) —
+  계획·편성·재개의 전제가 되는 인용(파일:라인·함수·문서 조항)은 실존만이 아니라 **살아 있어야**
+  한다. 기계 층(SHA·경로·심볼 실존 — T1 grep/git 필수) + 판단 층(실행 경로 연결·코드 성격·
+  문서 현행성 — T1 판정 + CX 반박 필수 축) → `LIVE/STALE/DEAD/UNVERIFIED`. **LIVE만 확정
+  전제**, 나머지는 가정·위험·유예. 실측 근거: 소유권 맵에 없는 파일 배정, 다른 큐 수치 인용 —
+  "확인 안 하고 인용"이 공통 원인. 적용: warplan 근거 수집 + CX 2차 반박 축, conductor DAG
+  전제 + CX-A, deep-audit 카탈로그 + T2 독립 확인, executor 근거 반박, codex-lane 산출 요구
+- **handoff는 save 무투입 · restore 조건부 CX** — save는 SHA·경로 실존만 기계 확인(컴팩션 임박에
+  CX 분 단위 지연 불가), 검증 못 한 주장은 UNVERIFIED 보존. restore는 "다음 단계"를 결정하는
+  주장을 기계 검증하고, HEAD 겹침·구조 의존·STALE일 때만 CX 백그라운드 발진 (실측: 다음 단계
+  2회 오류 사례)
+- **리뷰 레인 호출 템플릿** ([shared/reviewer-prompt.md](plugins/jongmin-skills/shared/reviewer-prompt.md)) —
+  executor-prompt의 리뷰 쪽 대칭. conductor quick/deep(`change`)·loop 독립 판정(`completion`)이
+  같은 템플릿을 채워 lane-reviewer를 발진. **lane-reviewer의 스킬 승격은 기각** — 스킬은 T1
+  세션 컨텍스트에서 돌아 구현자와 컨텍스트를 공유하게 되고, 그것은 자기승인이다. 에이전트
+  격리가 리뷰 독립성의 본질이라 agents/lane-reviewer.md는 단일 정의점으로 유지
 
 ### v1.7.1 (2026-08-14) — 실전 피드백 배치: v4 첫 16레인 웨이브의 결함 반영
 

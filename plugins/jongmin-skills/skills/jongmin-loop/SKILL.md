@@ -80,7 +80,8 @@ quick 게이트만 동기, deep 리뷰·CX는 백그라운드 누적 → 종료 
 
 1. **장부 게이트**: 전 항목 완료 + 오라클(완료 조건 검증 명령) green + **리뷰 큐 전 항목
    접합 완료** (백그라운드 deep·CX 결과를 freshness rule 확인 후 전부 판정 — pending 0)
-2. **독립 판정 게이트**: `lane-reviewer`(T2)에 SHA 범위·diff·테스트 결과**만** 전달하고,
+2. **독립 판정 게이트**: `lane-reviewer`(T2)에 SHA 범위·diff·테스트 결과**만** 전달하고
+   ([reviewer-prompt.md](../../shared/reviewer-prompt.md) `completion` 모드 템플릿),
    **동시에 CX 반박 자문을 상시 병렬 발진**한다 ([codex-lane.md](../../shared/codex-lane.md),
    "이 완료 주장을 반박하라"). CX 소견은 자문 — T2 리뷰와 갈리면 T1이 실측 판정 (비대칭 규칙).
    critical 지적은 장부에 태스크로 추가하고 루프 재진입.

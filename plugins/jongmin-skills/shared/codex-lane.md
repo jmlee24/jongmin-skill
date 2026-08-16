@@ -9,6 +9,9 @@ T1 접합의 병목은 CX 실행이 아니라 **독해**다. CX 프롬프트에 
 - **Top 5 findings 이내** + 항목별 severity(critical/major/minor) + T1이 실측할 검증법
 - 장문 서술 금지 — 근거는 항목당 2~3문장
 - 자문 지위 명시: "자동 채택되지 않으며 T1이 실측으로 접합한다"
+- 근거를 인용하는 산출에는 **근거 기준 SHA + 생존성 상태**(LIVE/STALE/DEAD/UNVERIFIED —
+  [evidence-liveness.md](evidence-liveness.md))를 요구한다. freshness rule(아래)은 리뷰 산출물의
+  시점 신선도, 생존성은 인용 대상 자체의 검사 — 별개다
 - Top 5 형식은 **반박·리뷰형 임무 기본**이다 — 명세 생성·규명형 임무는 프롬프트에서 산출
   형식을 별도 지정한다 (실측: 명세 임무에 리뷰 형식만 있어 매번 형식을 지어 줘야 했던 사례)
 
