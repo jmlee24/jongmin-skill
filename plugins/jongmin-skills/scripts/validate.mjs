@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // 릴리스 검증 묶음 — 단일 진입점 (PRD S6). 출력 ASCII.
-// 사용: node validate.mjs [--only=1,2,3,4] [--root=<repo root>]
+// 사용: node validate.mjs [--only=1,...,6] [--root=<repo root>]
 // 항목: 1) claude plugin validate (stdout warning 판정 — exit code 신뢰 금지)
 //       2) guard-test + state-test
 //       3) 링크 무결성 (shared 상호참조 + 동일 디렉터리 + README, 디렉터리 링크 허용)
@@ -9,6 +9,7 @@
 //       4) description 검사 — 4-A 변경 3종 확정 문자열 일치(UTF-8 + \r 제거 정규화 후 비교,
 //          그 외 정규화 금지 — PRD 확정) / 4-B 미변경 4종 회귀 lint
 import { execFileSync, spawnSync } from "node:child_process";
+import { lintCases } from "./case-lint.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -178,7 +179,7 @@ function main() {
     return m ? [m[1], m[2]] : [a, true];
   }));
   const root = args.root ? path.resolve(String(args.root)) : DEFAULT_ROOT;
-  const VALID_CHECKS = [1, 2, 3, 4, 5];
+  const VALID_CHECKS = [1, 2, 3, 4, 5, 6];
   const only = args.only !== undefined ? String(args.only).split(",").map(Number) : VALID_CHECKS;
   // 무효한 --only는 빈 검사 집합 = 공허 ALL PASS가 된다 — 즉시 거부 (cx-s6)
   if (!only.length || only.some((n) => !VALID_CHECKS.includes(n))) {
@@ -190,6 +191,7 @@ function main() {
   if (only.includes(3)) check3(root);
   if (only.includes(4)) check4(root);
   if (only.includes(5)) check5(root);
+  if (only.includes(6)) failures += lintCases(root).failures; // cases/ 스키마 — 상세는 case-lint.mjs
   console.log(failures ? `\nRESULT: FAIL (${failures})` : "\nRESULT: ALL PASS");
   process.exit(failures ? 1 : 0);
 }
