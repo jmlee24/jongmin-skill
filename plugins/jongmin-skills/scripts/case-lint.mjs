@@ -10,7 +10,7 @@ const SEVERITIES = ["critical", "major", "minor"];
 const STATUSES = ["pending", "applied", "rejected"];
 const REVIEW_PENDING = 5;
 const REVIEW_AGE_DAYS = 14;
-const REQUIRED_KEYS = ["skill", "observed-version", "severity", "status"];
+const REQUIRED_KEYS = ["skill", "project", "observed-version", "severity", "status"];
 
 export function lintCases(root, log = console.log) {
   const dir = path.join(root, "cases");

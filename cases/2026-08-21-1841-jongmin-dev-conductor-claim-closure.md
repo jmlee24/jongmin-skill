@@ -1,5 +1,6 @@
 ---
 skill: jongmin-dev-conductor
+project: YNprinting
 observed-version: 1.8.3
 severity: major
 status: pending

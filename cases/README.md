@@ -12,6 +12,7 @@ status는 파일 이동 없이 frontmatter에서 갱신한다 (git blame·링크
 ```markdown
 ---
 skill: jongmin-dev-conductor        # shared 파일이면 shared/<파일명>
+project: <실측이 난 프로젝트명>     # 독립 사례 집계 키 — 다른 프로젝트여야 독립 2건
 observed-version: 1.8.2
 severity: critical | major | minor
 status: pending                     # pending | applied | rejected
@@ -38,7 +39,7 @@ status: pending                     # pending | applied | rejected
 
 - **검토 트리거** (먼저 오는 것): pending 5건 / 최고령 pending 14일 / critical 발생.
   validate.mjs ⑥이 충족 시 NOTE를 출력한다 — 릴리스 검증을 돌릴 때마다 보인다.
-- **검토 ≠ 적용.** 적용 근거는 케이스별로 별도: 재현 성공 / 독립 사례 2건(다른 기기·세션) /
+- **검토 ≠ 적용.** 적용 근거는 케이스별로 별도: 재현 성공 / 독립 사례 2건(다른 **프로젝트** — `project:` 키로 집계, `related:`로 상호 참조) /
   명백한 규약 모순 — 중 하나. 서로 무관한 5건이 모여도 각 건은 여전히 n=1일 수 있다.
   근거 미충족은 pending 유지 또는 rejected(+사유).
 - **절차**: 시작 전 `git pull` → skill-forge improve 1회에 pending 전건 입력(CX 교차 포함) →

@@ -1,5 +1,6 @@
 ---
 skill: jongmin-dev-conductor
+project: YNprinting
 observed-version: 1.8.2
 skill-version: conductor v4.1 (v4 이후 두 번째 실전 웨이브)
 severity: major

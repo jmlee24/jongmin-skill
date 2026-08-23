@@ -1,5 +1,6 @@
 ---
 skill: shared/executor-prompt.md
+project: YNprinting
 observed-version: 1.8.3
 severity: major
 status: pending

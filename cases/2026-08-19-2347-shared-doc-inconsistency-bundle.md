@@ -1,5 +1,6 @@
 ---
 skill: shared/
+project: YNprinting
 observed-version: 1.8.3
 severity: minor
 status: pending

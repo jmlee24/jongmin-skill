@@ -1,5 +1,6 @@
 ---
 skill: shared/codex-lane.md
+project: YNprinting
 observed-version: 1.8.3
 skill-version: conductor v4.1 (YNprinting 32커밋 웨이브, 2026-08-20)
 severity: major
