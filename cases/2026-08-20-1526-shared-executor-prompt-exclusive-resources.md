@@ -4,7 +4,8 @@ project: YNprinting
 observed-version: 1.8.3
 skill-version: conductor v4.1 (YNprinting 32커밋 웨이브, 2026-08-20)
 severity: major
-status: pending
+status: applied
+applied-version: 1.9.0
 ---
 ## 실패 형태
 병렬 쓰기 안전 전제가 「파일 disjoint」뿐이다. 서로 다른 파일을 만져도 같은 테스트 DB·포트·
@@ -18,3 +19,6 @@ status: pending
 ## 제안 (배치에서 판정)
 6요소를 늘리지 말고 「소유권·계약」 안에 **Exclusive resources 선택 필드**(DB·포트·캐시·
 생성물 경로·생성기/포맷터 영향 범위) + rename/delete 소유권 의미 한 줄.
+
+**적용 기록 (1.9.0)**: 6요소에 Exclusive resources 선택 필드 + rename·delete 소유권 의미 반영.
+간섭 재현 픽스처 실 프로브는 다음 병렬 웨이브에서 수행한다.

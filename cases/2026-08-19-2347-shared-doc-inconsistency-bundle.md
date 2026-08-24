@@ -3,7 +3,8 @@ skill: shared/
 project: YNprinting
 observed-version: 1.8.3
 severity: minor
-status: pending
+status: applied
+applied-version: 1.9.0
 ---
 ## 실패 형태
 문서 정합 결함 묶음 (사용 세션 CX 발견, 그 세션 T1 경로 실측):

@@ -3,7 +3,8 @@ skill: shared/
 project: chess-masterplan (1단계 웨이브 — 쓰기 11·리뷰 3·CX 5·커밋 23·3h03m)
 observed-version: 1.8.2
 severity: major
-status: pending
+status: applied
+applied-version: 1.9.0
 related: 2026-08-21-1841-shared-history-freshness-burn, 2026-08-21-1841-shared-executor-prompt-no-new-md-default (YNprinting — 문서 위생 축, 독립 2건째)
 ---
 ## 실패 형태

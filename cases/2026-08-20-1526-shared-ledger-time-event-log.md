@@ -4,7 +4,8 @@ project: YNprinting
 observed-version: 1.8.3
 skill-version: conductor v4.1 (YNprinting 32커밋 웨이브, 2026-08-20)
 severity: minor
-status: pending
+status: applied
+applied-version: 1.9.0
 ---
 ## 실패 형태
 스킬이 "레인별 시작/종료/대기"를 요구하는데 수집 기구가 없어 duration만 모였다 — 큐 대기·

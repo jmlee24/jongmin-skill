@@ -4,7 +4,7 @@ project: YNprinting
 observed-version: 1.8.3
 skill-version: conductor v4.1 (YNprinting 32커밋 웨이브, 2026-08-20)
 severity: minor
-status: pending
+status: rejected
 ---
 ## 실패 형태
 결함이 아니라 **배치 참고** — "값을 한 조항" 귀속의 과대 부분(CX 반박, 사용 세션 T1 수용).

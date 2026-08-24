@@ -171,6 +171,20 @@ node plugins/jongmin-skills/scripts/validate.mjs
 
 ## 변경 이력
 
+### v1.9.0 (2026-08-24) — 1차 케이스 배치: 문서 위생 정본 · conductor v4.2 · 소각 우선
+
+첫 배치 갱신 (pending 33 → applied 17 · rejected 1 · pending 15). 적용 근거: 독립 2건 축 4개
+(심볼 삭제 drift / fix 레인 재확인·접합 종료 / 시간 이벤트 장부 / 문서 소각) + 명백한 규약
+모순 + 사용자 방향(문서 위생). 주요 변경:
+- **shared/doc-hygiene.md 신설** — 생성·배치·용량 초과 처리·참조·정본·소각의 유일한 정본.
+  집행은 분리: executor sentinel(항상 복제 2항) + landing-check(.md 전 모드 대조·소각 판정)
+- **conductor v4.2** — 착지·리뷰 절을 landing-check/reviewer-prompt 참조로 압축, T1 재분류
+  severity·fix 레인 경량 재확인(원 리뷰어 SHA 범위 확인)·접합 종료 조건, CX 데드라인 정본 일원화
+- **소유권 재승인 프로토콜** — executor 자율 최소 침범을 침범 제안(보고→T1 승인→재개)으로 강등,
+  승인 기록 없는 Owned 밖 변경은 착지 차단. 최상위 심볼 삭제·시그니처 변경은 커밋 전 보고
+- **시간 이벤트 장부** — scripts/time-ledger.mjs (8이벤트 append/report, 큐 대기·판정 구간 자동 계산)
+- 소각 우선: 이력 4파일 압축·중복 예시 축약·shared 순환 참조 2쌍 해소. 런타임 순증 음수
+
 ### v1.8.3 (2026-08-19) — 케이스 수집 체계: 실시간 수정 → 배치 갱신 전환
 
 사용자 결정(즉시 반영이 낳은 소탐대실 실측에서) + Claude/CX 교차:

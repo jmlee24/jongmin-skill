@@ -4,7 +4,8 @@ project: YNprinting
 observed-version: 1.8.2
 skill-version: conductor v4.1 (v4 이후 두 번째 실전 웨이브)
 severity: major
-status: pending
+status: applied
+applied-version: 1.9.0
 ---
 ## 실패 형태
 중요 게이트가 322줄 산문 안에 이력·해설과 같은 무게로 묻혀 있다 — 이력이 본문의 약 1/4,

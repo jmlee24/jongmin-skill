@@ -3,7 +3,8 @@ skill: jongmin-dev-conductor
 project: chess-masterplan (1단계 웨이브 — 쓰기 11·리뷰 3·CX 5·커밋 23·3h03m)
 observed-version: 1.8.2
 severity: major
-status: pending
+status: applied
+applied-version: 1.9.0
 related: 2026-08-20-1526-jongmin-dev-conductor-splice-termination-severity (YNprinting — 접합 종료 조건, 독립 2건째)
 ---
 ## 실패 형태

@@ -3,7 +3,8 @@ skill: shared/executor-prompt.md
 project: YNprinting
 observed-version: 1.8.3
 severity: major
-status: pending
+status: applied
+applied-version: 1.9.0
 ---
 ## 실패 형태
 "새 문서 파일 생성 금지"가 예시(:63)와 주의 절(:106)에만 있어 규약 복제(:23-25)의 필수 항목이

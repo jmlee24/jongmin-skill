@@ -3,7 +3,8 @@ skill: shared/ledger.md
 project: chess-masterplan (1단계 웨이브 — 쓰기 11·리뷰 3·CX 5·커밋 23·3h03m)
 observed-version: 1.8.2
 severity: minor
-status: pending
+status: applied
+applied-version: 1.9.0
 related: 2026-08-20-1526-shared-ledger-time-event-log (YNprinting — 독립 2건째)
 ---
 ## 실패 형태

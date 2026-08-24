@@ -64,20 +64,18 @@
 
 ## 3. 시간 장부 (conductor 웨이브 필수)
 
-레인별 벽시계 기록 — 다음 웨이브의 병목 튜닝은 추정이 아니라 이 실측으로 한다:
+수동 표 대신 **append-only 이벤트 로그**로 기록한다 — 수동 기록은 큐 대기·판정 구간을 남기지
+못한다 (실측 2웨이브: duration만 남고 대기·충돌 계측 0). 고정 스크립트를 쓴다:
 
-```markdown
-## 시간
-| 레인 | 시작 | 종료 | 비고(대기·병행 여부) |
-|---|---|---|---|
-| 쓰기#1 | 10:00 | 10:32 | 백그라운드, T1은 프롬프트#2 준비 |
-| 쓰기#2 | 10:05 | 10:41 | 쓰기#1과 병렬 (소유권 분리), 미착지 큐 대기 6분 |
-| 리뷰#1 | 10:35 | 11:02 | 쓰기#2와 병행 |
+```bash
+node <플러그인루트>/scripts/time-ledger.mjs append <장부디렉터리>/time-events.tsv <레인> <이벤트> [메모]
+node <플러그인루트>/scripts/time-ledger.mjs report <장부디렉터리>/time-events.tsv
 ```
 
-병렬 웨이브에서는 **미착지 큐 대기**(레인 완료 → 착지 시작까지), **착지 충돌 발생 여부**,
-**검증 실행 대기와 T1 판정 구간**(실행 발진 → 출력 도착 → 판정 완료)을 비고에 기록한다 —
-발진 게이트·머지 트레인 도입 여부는 이 실측으로 판단한다.
+이벤트 8종: `lane_start / lane_done / land_start / land_done / verify_start / verify_output /
+decision_done / conflict`. report가 레인 작업·미착지 큐 대기(lane_done→land_start)·착지·검증
+실행 대기·T1 판정 구간(verify_output→decision_done)·충돌 횟수를 자동 계산한다 — 발진 게이트
+튜닝·머지 트레인 도입 여부는 추정이 아니라 이 실측으로 판단한다.
 
 ## 4. 백그라운드 리뷰 큐 (파이프라이닝 모드 — conductor·loop)
 

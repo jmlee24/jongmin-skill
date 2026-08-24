@@ -4,7 +4,8 @@ project: YNprinting
 observed-version: 1.8.3
 skill-version: conductor v4.1 (YNprinting 32커밋 웨이브, 2026-08-20)
 severity: major
-status: pending
+status: applied
+applied-version: 1.9.0
 ---
 ## 실패 형태
 CX 데드라인 정본이 둘이다 — conductor 「실패·중단 정책」은 "15분 초과 시 잡 정지",
@@ -26,3 +27,6 @@ YNprinting 32커밋 웨이브: CX 6회 중 중복 CX 방치로 벽시계 약 2.5
   + 종료 코드 124/137과 codex 자체 실패 구분 · timeout이 자식 codex를 남기는지 확인 절차 ·
   강제 timeout과 "15분 점검 후 연장" 정책의 관계 명시. (< /dev/null 자체는 이미 문서에 있음 —
   빠진 건 timeout 래퍼와의 결합 규약뿐)
+
+**적용 기록 (1.9.0)**: 정본 일원화(conductor→codex-lane) + 중복성 취소 조항. timeout 래퍼
+결합 규약은 미검증(자식 프로세스 잔존 여부)으로 불채택 — 재관측 시 별도 케이스로.

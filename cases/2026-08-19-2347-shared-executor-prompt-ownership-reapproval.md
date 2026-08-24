@@ -4,7 +4,8 @@ project: YNprinting
 observed-version: 1.8.2
 skill-version: conductor v4.1 (v4 이후 두 번째 실전 웨이브)
 severity: major
-status: pending
+status: applied
+applied-version: 1.9.0
 ---
 ## 실패 형태
 소유권 예외가 3중 충돌: executor "논리적 동시 성립 불가면 최소 침범 진행" ↔ conductor 실패

@@ -4,7 +4,8 @@ project: YNprinting
 observed-version: 1.8.3
 skill-version: conductor v4.1 (YNprinting 32커밋 웨이브, 2026-08-20)
 severity: major
-status: pending
+status: applied
+applied-version: 1.9.0
 ---
 ## 실패 형태
 접합 종료 조건이 없다 — 문서 웨이브에서 리뷰→접합→리뷰→접합 3사이클, 매 사이클이 새

@@ -3,7 +3,8 @@ skill: shared/
 project: YNprinting
 observed-version: 1.8.3
 severity: minor
-status: pending
+status: applied
+applied-version: 1.9.0
 ---
 ## 실패 형태
 런타임 SKILL 본문의 이력 절이 세션 서사까지 싣고 있어 컨텍스트를 소비한다 — conductor 이력

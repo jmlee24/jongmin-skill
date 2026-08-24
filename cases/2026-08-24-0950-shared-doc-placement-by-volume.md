@@ -3,7 +3,8 @@ skill: shared/
 project: YNprinting
 observed-version: 1.8.3
 severity: major
-status: pending
+status: applied
+applied-version: 1.9.0
 related: 2026-08-21-1841-shared-executor-prompt-no-new-md-default, 2026-08-24-0154-shared-doc-burn-after-wave (문서 위생 축)
 ---
 ## 실패 형태
