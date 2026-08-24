@@ -25,7 +25,8 @@ conductor·loop·sortie의 "컴팩션·중단 후 재개" 갭을 이 스킬이 �
   시각·데드라인·산출물 위치와 함께 **"레인을 정지하지 않았음" 경고를 반드시 기록**한다.
   (실전 검증에서 기본 save가 진행 중인 CX 감사를 죽일 뻔한 사례에서 분리 — Codex 논의 합의안.)
 
-위치: `~/.claude/jongmin-ledgers/<프로젝트명>/<YYYY-MM-DD>-handoff.md` ([ledger.md](../../shared/ledger.md) 경로 규칙).
+명시 요청으로 파일을 만들 때의 위치: `~/.claude/jongmin-ledgers/<프로젝트명>/<YYYY-MM-DD>-handoff.md`
+([ledger.md](../../shared/ledger.md) 경로 규칙).
 
 > 턴 주의: deep-audit 등 `disallowed-tools`를 쓰는 스킬과 같은 턴이면 Write가 차단될 수 있다 (실측).
 > 이 경우 handoff는 별도 턴에서 실행하라.

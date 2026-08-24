@@ -53,11 +53,13 @@ T1이 6건을 하나씩 재판정 — 6건 전부 현재 HEAD에도 유효, §8�
 
 ```bash
 codex exec --sandbox read-only --json \
-  --output-last-message "<scratchpad>/codex-out.md" \
-  "<프롬프트>" > "<scratchpad>/codex-events.jsonl" 2> "<scratchpad>/codex-err.log" < /dev/null
+  --output-last-message "<scratchpad>/cx-<레인ID>/out.md" \
+  "<프롬프트>" > "<scratchpad>/cx-<레인ID>/events.jsonl" 2> "<scratchpad>/cx-<레인ID>/err.log" < /dev/null
 ```
 
-`run_in_background`로 실행하고, 완료 알림 후 `codex-out.md`만 읽으면 된다.
+`run_in_background`로 실행하고, 완료 알림 후 `out.md`만 읽으면 된다.
+**레인마다 디렉터리를 분리한다** — 병렬 CX(기본 3슬롯)가 같은 경로를 쓰면 서로의
+events·out을 truncate하고 thread ID·생존 판정이 섞인다. 접합 완료 후 디렉터리 소각.
 
 - `< /dev/null` 필수 — stdin이 열려 있으면 추가 입력 대기로 행이 걸린다. 붙이면
   "Reading additional input from stdin..." 메시지가 떠도 행 없이 진행된다 (실측, 0.149)
@@ -70,11 +72,11 @@ codex exec --sandbox read-only --json \
 
 ## 후속 턴 (resume)
 
-`codex-events.jsonl`의 `thread.started` 이벤트에서 `thread_id`를 파싱해 두고 (실측 확인: `{"type":"thread.started","thread_id":"..."}`):
+`events.jsonl`의 `thread.started` 이벤트에서 `thread_id`를 파싱해 두고 (실측 확인: `{"type":"thread.started","thread_id":"..."}`):
 
 ```bash
 codex exec resume <THREAD_ID> -c 'sandbox_mode="read-only"' --json \
-  --output-last-message "<scratchpad>/codex-out-2.md" "<후속 프롬프트>" < /dev/null
+  --output-last-message "<scratchpad>/cx-<레인ID>/out-2.md" "<후속 프롬프트>" < /dev/null
 ```
 
 `resume --last`는 레인이 겹칠 수 있으므로 금지 — 항상 ID를 지정한다.
@@ -86,7 +88,7 @@ resume은 `--sandbox`를 받지 않는다 (codex-cli 0.149 실측: unexpected ar
 codex에는 타임아웃 플래그가 없다. 기본 15분은 **점검 시점**이지 kill 시점이 아니다
 (큰 diff 리뷰는 15분을 정상적으로 넘긴다 — 실측된 사망 오판 사례에서 개정):
 
-1. **생존 판정**: `codex-events.jsonl` 크기/mtime 증가, stderr 로그 변화 = 살아 있음 → 15분 연장
+1. **생존 판정**: `events.jsonl` 크기/mtime 증가, stderr 로그 변화 = 살아 있음 → 15분 연장
 2. **무신호 시에도 kill 전에**: `--output-last-message` 부분 산출 확인 → `thread_id` 회수 후
    resume으로 이어받기 시도. 부분 산출(반례·의심 축·초안)도 회수 가치가 있다 — 버리지 말고 접합
 3. **중복성 취소**: CX가 답하려던 질문을 다른 레인(리뷰·다른 CX)이 이미 전부 답했으면 생존

@@ -19,6 +19,7 @@ export function lintCases(root, log = console.log) {
   if (!fs.existsSync(dir)) { log("PASS [6] cases/ absent (nothing to lint)"); return { failures, pending: 0 }; }
   const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md") && f !== "README.md");
   let pending = 0;
+  const criticalPending = [];
   let oldestPending = null;
   for (const f of files) {
     const txt = fs.readFileSync(path.join(dir, f), "utf-8").replace(/\r/g, "");
@@ -35,11 +36,15 @@ export function lintCases(root, log = console.log) {
     if (!/^\d{4}-\d{2}-\d{2}-\d{4}-.+\.md$/.test(f)) fail(`${f}: filename must be YYYY-MM-DD-HHMM-<skill>-<slug>.md`);
     if (fm.status === "pending") {
       pending++;
+      if (fm.severity === "critical") criticalPending.push(f);
       const d = f.slice(0, 10);
       if (!oldestPending || d < oldestPending) oldestPending = d;
     }
   }
   if (!failures) log(`PASS [6] cases schema ok (${files.length} files, ${pending} pending)`);
+  if (criticalPending.length) {
+    log(`NOTE [6] batch review trigger met: pending critical ${criticalPending.length} (${criticalPending.join(", ")})`);
+  }
   if (pending >= REVIEW_PENDING) {
     log(`NOTE [6] batch review trigger met: pending ${pending} >= ${REVIEW_PENDING}`);
   } else if (oldestPending) {
