@@ -44,8 +44,9 @@ T1이 6건을 하나씩 재판정 — 6건 전부 현재 HEAD에도 유효, §8�
 
 ## 발진 상한 — 접합 큐가 포화되면 던지기를 멈춘다
 
-동시 프로세스 기본 3, 예외 4. T1 접합 큐가 `critical > 0`, `major > 5`,
-`deferred > 12` 중 하나라도 넘으면 새 CX 발진을 멈추고 먼저 접합한다.
+동시 프로세스 기본 3, 예외 4 — **실행 슬롯** 기준이다 (미접합 결과는 슬롯이 아니라 접합
+큐로 센다). T1 접합 큐가 `critical > 0`, `major > 5`(T1 재분류 후 미접합분 — 중복·기각분
+제외), `deferred > 12` 중 하나라도 넘으면 새 CX 발진을 멈추고 먼저 접합한다.
 백그라운드는 벽시계 비용이 0이지만 접합 비용은 숨겨지지 않는다.
 
 ## 기본 패턴 (백그라운드 실행)
@@ -58,7 +59,8 @@ codex exec --sandbox read-only --json \
 
 `run_in_background`로 실행하고, 완료 알림 후 `codex-out.md`만 읽으면 된다.
 
-- `< /dev/null` 필수 — stdin이 열려 있으면 "Reading additional input from stdin..."으로 행 (실측 확인)
+- `< /dev/null` 필수 — stdin이 열려 있으면 추가 입력 대기로 행이 걸린다. 붙이면
+  "Reading additional input from stdin..." 메시지가 떠도 행 없이 진행된다 (실측, 0.149)
 - `--sandbox read-only`는 기본값이어도 **명시 고정**한다
 - `-m`/`--model` 지정 금지 — 티어 규칙([model-tiers.md](model-tiers.md))
 - stdout(JSONL 이벤트)과 stderr(진행 로그)를 **분리 캡처**한다 — 섞으면 파싱이 깨진다
@@ -71,11 +73,13 @@ codex exec --sandbox read-only --json \
 `codex-events.jsonl`의 `thread.started` 이벤트에서 `thread_id`를 파싱해 두고 (실측 확인: `{"type":"thread.started","thread_id":"..."}`):
 
 ```bash
-codex exec resume <THREAD_ID> --sandbox read-only --json \
+codex exec resume <THREAD_ID> -c 'sandbox_mode="read-only"' --json \
   --output-last-message "<scratchpad>/codex-out-2.md" "<후속 프롬프트>" < /dev/null
 ```
 
 `resume --last`는 레인이 겹칠 수 있으므로 금지 — 항상 ID를 지정한다.
+resume은 `--sandbox`를 받지 않는다 (codex-cli 0.149 실측: unexpected argument —
+`-c sandbox_mode`로 지정한다. 버전 갱신 시 재확인).
 
 ## 데드라인·생존 판정 — kill은 최후 수단
 
@@ -85,7 +89,10 @@ codex에는 타임아웃 플래그가 없다. 기본 15분은 **점검 시점**�
 1. **생존 판정**: `codex-events.jsonl` 크기/mtime 증가, stderr 로그 변화 = 살아 있음 → 15분 연장
 2. **무신호 시에도 kill 전에**: `--output-last-message` 부분 산출 확인 → `thread_id` 회수 후
    resume으로 이어받기 시도. 부분 산출(반례·의심 축·초안)도 회수 가치가 있다 — 버리지 말고 접합
-3. **kill·강등은 최후 수단** — Claude 감사로 강등하면 보고에 반드시 명시:
+3. **중복성 취소**: CX가 답하려던 질문을 다른 레인(리뷰·다른 CX)이 이미 전부 답했으면 생존
+   여부와 무관하게 정지할 수 있다 — 질문이 소멸했으므로 강등 보고는 불요, 정지 사유만 장부에
+   기록한다 (실측: 중복 CX 방치로 벽시계 약 2.5시간 낭비)
+4. **kill·강등은 최후 수단** — Claude 감사로 강등하면 보고에 반드시 명시:
    **"CX 벤더 다양성 상실, 독립 컨텍스트 검증만 유지"**. 조용한 강등 금지 — 교차검증의
    핵심 가치가 빠진 채 통과 도장이 찍히는 것을 막는다
 

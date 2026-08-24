@@ -20,7 +20,7 @@
 
 1. **모델 3중주** — T1(세션 모델)이 지휘·판정, T2(`opus` 별칭)가 실행·리뷰, CX(Codex)가
    명세 생성·반박 자문. 바인딩은 [shared/model-tiers.md](plugins/jongmin-skills/shared/model-tiers.md)
-   한 파일에서만 정의 — 모델 세대가 바뀌면 그 파일만 수정.
+   와 에이전트 frontmatter(`agents/lane-reviewer.md`) 2지점에서 정의 — 세대 교체 시 함께 수정.
    CX 소견은 자문이며 자동 반영 금지, T2와 갈리면 T1이 실측으로 판정한다.
 2. **결정론 오라클 층** — LLM들은 맹점을 공유하므로(두 모델이 모두 틀릴 때 60%가 같은 오답,
    ICML 2025) 판정은 기계에 맡긴다: 착지마다 프로젝트의 타입체크·린트 게이트, 등가성 작업엔
@@ -31,7 +31,8 @@
 4. **공용 부품** ([shared/](plugins/jongmin-skills/shared/)) — model-tiers(티어 정의) /
    codex-lane(Codex CLI 실행 패턴 + 산출 Top 5 표준·freshness rule) / executor-prompt(쓰기
    레인 5요소 템플릿) / reviewer-prompt(리뷰 레인 호출 템플릿 — change·completion 모드) /
-   evidence-liveness(인용 근거 생존성 검증 — LIVE만 확정 전제) / landing-check(착지 검증
+   doc-hygiene(문서 생성·배치·참조·소각 정본) / evidence-liveness(인용 근거 생존성 검증 — LIVE만
+   확정 전제) / landing-check(착지 검증
    체크리스트) / question-policy(질문 배치) / ledger(진행·유예 장부 규격, `~/.claude/jongmin-ledgers/`)
 
 ## 스킬 목록
@@ -39,10 +40,10 @@
 ### [jongmin-dev-conductor](plugins/jongmin-skills/skills/jongmin-dev-conductor/SKILL.md) — 다중 레인 개발 편성
 
 **수행**: 병렬 접합기. 지휘부(메인 세션)는 구현을 직접 하지 않고 레인을 편성한다 — 쓰기
-레인(T2 에이전트, 구현+테스트+커밋, 한 번에 1개), 읽기 레인(CX 상시 2슬롯: 다음 태스크 명세 +
+레인(T2 에이전트, 구현+테스트+커밋, DAG 분리 태스크는 worktree 병렬), 읽기 레인(CX 상시 2슬롯: 다음 태스크 명세 +
 착지물 반박), 리뷰 레인(lane-reviewer, SHA 범위 독립 리뷰). 착지 검증(테스트 직접 재실행 +
 결정론 게이트) → 리뷰 → 지적사항 접합 → 최종 보고까지 7단계. 발진 시 배치 질문 1콜(커밋 권한
-포함), 이후 런 중 무질문. 쓰기 병렬은 실험 모드(계약 동결+소유권 맵)로만.
+포함), 이후 런 중 무질문. 쓰기 병렬(parallel-write)이 기본 모드 — 안전 전제는 계약 동결+소유권 맵.
 
 **쓸 때**: 커밋 3건 이상 예상되는 다중 파일 웨이브 / 무손실 최적화·리팩토링처럼 등가성 검증이
 핵심인 작업 / 회귀 비용이 큰 고위험 변경(데이터 정합성, 마이그레이션). 판단 기준은 저장소
