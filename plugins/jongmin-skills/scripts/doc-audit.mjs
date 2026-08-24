@@ -30,14 +30,16 @@ try {
   for (const r of rows) console.log(`  [${r.st}] ${r.file}  ${num[r.file] ?? ""}`);
   if (!rows.length) console.log("  (none)");
 
-  // 2) 신규 .md × allowlist — hard fail
+  // 2) 신규 .md × allowlist — hard fail. cases/는 규약 승인 생성이라 기본 면제
   for (const r of rows.filter(r => r.st === "A")) {
+    if (r.file.startsWith("cases/")) continue;
     if (!allow.includes(r.file)) hard.push("NEW_MD_NOT_ALLOWED: " + r.file);
   }
 
   // 3) 이번 범위 도입 코드·설정 → .md#앵커 참조 — hard fail (추가 줄만 검사)
   const addedNonMd = git(`diff ${base} -- . ":(exclude)*.md"`).split("\n")
-    .filter(l => l.startsWith("+") && !l.startsWith("+++") && /\.md#/.test(l));
+    .filter(l => l.startsWith("+") && !l.startsWith("+++") && /[\w가-힣)\]/-]\.md#/.test(l));
+  // 경로 문맥 필수(직전이 경로 문자) — 산문·주석의 ".md#" 언급은 오탐 (자기 자신이 걸린 실측)
   for (const l of addedNonMd) hard.push("CODE_TO_MD_ANCHOR: " + l.slice(1, 120).trim());
 
   // 4) 참조 후보 (완전성 비보장). 삭제 문서도 inbound를 본다 — delete 후 잔존 참조 검출
