@@ -71,7 +71,14 @@ if (cmd === "init") {
   };
   if (opts.session) st.owner_session_id = opts.session;
   const file = fileOf(name);
-  if (fs.existsSync(file)) die(`already exists: ${file} (cancel or complete it first)`);
+  if (fs.existsSync(file)) {
+    // 종료된(비활성) 상태 파일은 재init을 막지 않는다 — .stale로 격리 후 진행
+    // (실측 2026-08-24: complete 잔존물이 같은 이름 재init을 차단). 활성 루프는 계속 보호.
+    let prev = null;
+    try { prev = JSON.parse(fs.readFileSync(file, "utf8")); } catch { /* 손상 파일도 stale 격리 */ }
+    if (prev && prev.active) die(`already exists: ${file} (cancel or complete it first)`);
+    fs.renameSync(file, file.replace(/\.json$/, `.stale-${Date.now()}.json`));
+  }
   writeState(file, st);
   console.log(`OK init ${file}`);
 } else if (cmd === "tick") {

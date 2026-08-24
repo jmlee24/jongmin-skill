@@ -52,6 +52,7 @@ T1이 6건을 하나씩 재판정 — 6건 전부 현재 HEAD에도 유효, §8�
 ## 기본 패턴 (백그라운드 실행)
 
 ```bash
+mkdir -p "<scratchpad>/cx-<레인ID>"   # 선행 필수 — redirection이 codex 실행 전에 경로를 연다
 codex exec --sandbox read-only --json \
   --output-last-message "<scratchpad>/cx-<레인ID>/out.md" \
   "<프롬프트>" > "<scratchpad>/cx-<레인ID>/events.jsonl" 2> "<scratchpad>/cx-<레인ID>/err.log" < /dev/null
