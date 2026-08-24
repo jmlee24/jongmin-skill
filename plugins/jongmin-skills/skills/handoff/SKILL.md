@@ -67,30 +67,6 @@ conductor·loop·sortie의 "컴팩션·중단 후 재개" 갭을 이 스킬이 �
 
 ## 이력
 
-<details><summary>v1.3 (2026-08-14, 실전 피드백 — save 진입 게이트)</summary>
-
-타 PC 실전에서 사용자가 앞에 있는데 save가 발동해 파일+포인터로 응답한 사례(H-1·H-2)에서.
-save 진입 게이트 신설: 수신자가 사람이면 응답 본문이 기본, 파일은 명시 요청·전달 불가 상황만.
-제안된 `--dry` 모드는 게이트가 흡수하므로 기각 — 전달 가능하면 save 자체를 하지 않는다.
-장부 사본은 "불일치 시 장부 우선" 표기로 보존(정본 단일화 + 무손실 이전 양립). v1.8.0에서
-save 기계 실존 확인·restore 조건부 CX(evidence-liveness.md) 추가.
-</details>
-
-<details><summary>v1.2 (2026-08-11, 질문 정책 반영)</summary>
-
-restore의 스냅샷 다중 매치 시 무조건 질문 → 우선순위 기본값(같은 cwd·최신·미완료·HEAD 근접)
-자동 선택 + 동률만 질문으로 전환 (question-policy.md 신설).
-</details>
-
-<details><summary>v1.1 (2026-08-08, 실전 검증 반영)</summary>
-
-실전 1회 완료 (검증 세션 중간 스냅샷). save를 기본(이탈)과 --keep-lanes(중간 체크포인트)로 분리 —
-기본 save의 무조건 레인 정지가 진행 중 CX 감사와 충돌한 사례에서. disallowed-tools 턴 전파 주의 추가.
-</details>
-
-<details><summary>v1 (2026-08-08)</summary>
-
-family-plan-v2 기반 초판. GSD의 STATE.md 메타 차용하되 위치는 repo 밖(전역 문서 규약).
-계정 회계 항목은 x20 2계정(개인/법인) 운용 지원. 경량 DoD 적용 대상 (베이스라인 실패 재현 생략,
-실패 사례 서술로 대체: 컴팩션·계정 전환 시 진행 상태 유실).
-</details>
+폐기 결정만 남긴다 (릴리스 서사는 git 이력, v1 2026-08-08 ~ 현재):
+- `--dry` 모드 기각 — save 진입 게이트가 흡수: 전달 가능하면 save 자체를 하지 않는다 (v1.3)
+- 무조건 레인 정지 폐기 — 기본 save(이탈)와 --keep-lanes(중간 체크포인트)로 분리 (v1.1)

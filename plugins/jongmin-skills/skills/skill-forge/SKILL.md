@@ -43,7 +43,8 @@ argument-hint: "<create|eval|pressure|improve> <스킬명 또는 요구사항>"
   description·본문에 슬래시 전용임을 명시해야 한다. 질문 금지류 계약은 `disallowed-tools`로 하드
   강제하되, **차단이 같은 턴 후속 스킬에 전파됨**(실측)을 본문에 경고한다.
 - 문서에 적는 모든 CLI 명령·플래그·이벤트명은 **실행으로 확인 후 기재** (실측 검증).
-- 이력은 `<details>` v절로. 폐기한 패턴은 이유와 함께 남긴다.
+- 이력은 **현재 행동을 설명하는 주요 변경·폐기 결정만 최대 10줄** — 세션 서사·상세 릴리스
+  기록은 런타임 본문에 싣지 않는다 (git 이력으로). 폐기한 패턴은 이유와 함께 남긴다.
 
 릴리스 게이트 (create 완료 선언 직전 1회 — 초안 중간마다 아님):
 1. T1이 `scripts/validate.mjs` 원문 결과와 eval·pressure 결과를 직접 판정
@@ -91,25 +92,8 @@ push 금지선이 버티는지 본다.
 
 ## 이력
 
-<details><summary>v1.2 (2026-08-11, 공식 제작법 재대조)</summary>
-
-공식 문서(code.claude.com/docs/skills + platform best-practices) 재대조로 초안 규약 교정:
-description "발동 조건만" → "무엇+언제"(제3인칭, 공식 규칙 — 기존 규약이 과교정), when_to_use
-필드 도입, 참조 1단계 깊이 제한, scripts/ 자유도 설계, 예제 input/output 쌍, 질문 정책 준수 축
-추가. 미채용 보류: context:fork+background(스킬 자체의 백그라운드 서브에이전트화 — deep-audit
-후보, 실측 후 채용 판단).
-</details>
-
-<details><summary>v1.1 (2026-08-08, 실전 검증 반영)</summary>
-
-실전 1회 완료 (conductor eval). eval을 데스크 판정/실 프로브 2단계로 분리 — 프로브 실측
-(--max-turns 1 판정 불가, 회당 ~$0.3). create 규약의 disable-model-invocation 해석을
-"안전장치"에서 "슬래시 전용화"로 교정 (실측 + Codex 합의).
-</details>
-
-<details><summary>v1 (2026-08-08)</summary>
-
-family-plan-v2 기반 초판. skill-creator 4모드(Create/Eval/Improve/Benchmark) 차용,
-Benchmark는 improve에 흡수. "베이스라인 실패 먼저"는 superpowers NO SKILL WITHOUT A FAILING TEST 채용.
-교차 평가 절차는 2026-08-08 dev-conductor 평가 세션(Claude+CX, thread.started 실측 판정)의 표준화.
-</details>
+폐기·보류 결정만 남긴다 (릴리스 서사는 git 이력, v1 2026-08-08 ~ 현재):
+- description "발동 조건만" 규약 폐기 — 공식 규칙은 "무엇+언제", 기존 규약이 과교정이었다 (v1.2)
+- disable-model-invocation "안전장치" 해석 폐기 — 실측상 자연어 발동 완전 차단, 슬래시 전용화로 교정 (v1.1)
+- Benchmark 모드는 improve에 흡수 (v1)
+- 보류: context:fork+background 스킬 서브에이전트화 — deep-audit 후보, 실측 후 채용 판단 (v1.2)
