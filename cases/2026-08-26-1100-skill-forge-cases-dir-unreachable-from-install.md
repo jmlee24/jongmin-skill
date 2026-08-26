@@ -19,3 +19,8 @@ cases/가 없고 case-lint.mjs가 부재를 PASS로 처리한다 — 개선 데�
 ## 제안 (배치에서 판정 — P0, 5~12줄)
 ① skill-forge improve·케이스 우선 규약에 cases/ 물리 경로(마켓플레이스 클론) 명시 ② case-lint는
 cases/ 부재를 FAIL(또는 최소 NOTE 강조)로 전환 — "0건"과 "디렉터리 없음"을 구분.
+
+**재판정 (T1·CX 접합, 2026-08-26 14:00)**: P0 해제 → major. "설치본에서 cases/ 직접 쓰기 불가"는 설계대로
+(캐시 밖 배치, 런타임 오염 0 실측). 실제 결함은 ① 2단계 토폴로지에 1단계 계약 문구 ② 부재 PASS 표기.
+①은 2026-08-26-1400-skill-forge-case-handoff-intake-contract로, ②는 scripts-validate-root-install-mismatch
+케이스(lint 실행 모드 결함)로 이관. 이 파일은 관측 기록으로 유지.
