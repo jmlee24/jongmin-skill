@@ -171,6 +171,13 @@ node plugins/jongmin-skills/scripts/validate.mjs
 
 ## 변경 이력
 
+### v1.9.2 (2026-08-27) — 긴급 수정 2건: CX 프롬프트 stdin 전달 · 잡 핸들 전용 정지
+
+critical 케이스 2건 즉시 반영(긴급 예외). codex-lane 기본 패턴을 셸 인라인 문자열에서 **파일 stdin(`-`)**
+으로 교체 — 백틱·달러 기호 손상 재현 후 stdin 경로 exec·resume 실측 통과. 중단 절차는 PID가 아니라
+**run_in_background 잡 핸들(TaskStop)** 전용 명령 형태로(conductor·handoff 동일 계약) — `pkill -f` 자기
+살해 2회 실측. 구조 리뷰(T1+CX) 결과는 케이스로 등록, 2차 배치 설계 입력.
+
 ### v1.9.1 (2026-08-24) — handoff v1.4: 진입 게이트를 전달 경로 기준으로
 
 save 게이트의 분기 기준을 "소비자가 사람/기계냐"에서 **전달 경로**(사용자가 나를 수 있는가)로

@@ -3,7 +3,8 @@ skill: shared/codex-lane.md
 project: YNprinting (2026-08-27 웨이브 — warplan 2·conductor 1(13커밋)·handoff 2·lane-reviewer 2; 원문 experiments/session_20260827_measurements/는 타 기기 로컬 미커밋 — 이 PC 접근 불가)
 observed-version: 1.9.1
 severity: critical
-status: pending
+status: applied
+applied-version: 1.9.2
 related: 2026-08-26-1100-shared-codex-lane-cwd-probe-sentinel (codex-lane 집행점 축)
 ---
 ## 실패 형태
@@ -20,3 +21,7 @@ G (critical, 이번 세션 2회): 표준 패턴이 프롬프트를 **셸 문자�
 기본 패턴을 **프롬프트 파일 경유**로 교체(파일 작성 → `"$(cat file)"`), 인라인 문자열 예시 제거.
 heredoc을 쓰면 quoted delimiter(<<'EOF') 강제 — 단 이 환경의 Bash 도구는 heredoc 자체가 불안정
 (큐레이터 실측 2회 실패)이라 파일 경유가 더 안전.
+
+**적용 기록 (1.9.2, 긴급 예외)**: T1 셸 프로브로 인라인 손상 재현 → CX 반박에서 stdin(-) 대안 제시 → T1이
+codex-cli 0.150 exec·resume 모두 실측(exit 0, 백틱·$·$(sub) 원문 수신, 행 없음) → stdin 형태 채택.
+`$(cat)`는 후행 개행 제거·argv 한도 문제로 미채택.

@@ -20,3 +20,7 @@ B (보고 critical) + K (major): 레인 3개가 각자 pytest tests/unit을 돌�
 Preflight 「환경·자원 매니페스트」: 하드웨어·포트·DB·캐시별 자원 ID + 동시 실행 한도, 테스트 분류
 lane-safe / exclusive / integration-only → 같은 exclusive 자원을 가진 레인 사이 **DAG mutex 간선**
 자동 생성. reviewer-prompt에 자원 제약 필드. 축 3세션 관측 — 독립 2건 성립.
+
+**정정 (CX 구조 리뷰, 2026-08-27)**: "같은 exclusive 자원 레인 사이 DAG mutex 간선 생성" 처방은 철회 —
+mutex는 인과 의존이 아니라 스케줄링 제약이라 DAG에 넣으면 임의 선후관계와 stale BASE를 만든다. 별도
+capacity/lock 제약으로 모델링 (architecture-manifest-executed-entrypoint 케이스 참조).

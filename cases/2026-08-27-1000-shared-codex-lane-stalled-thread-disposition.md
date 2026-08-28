@@ -16,3 +16,6 @@ I: events.jsonl이 253KB에서 멈춘 채 프로세스만 6개 남는 상태. "1
 ## 제안 (배치에서 판정)
 점검 결과별 처분표: 진척 있음→연장 / 무진척+부분 산출→회수 후 resume 1회 / resume 실패→PID kill +
 강등 보고 / 중복성 취소 해당→즉시 정지. 각 분기에 벽시계 상한.
+
+**정정 (1.9.2 handle-only 계약)**: "resume 실패 → PID kill" 처방은 "resume 잡 핸들 TaskStop"으로 교정 —
+표준 발진 식별자는 PID가 아니라 run_in_background 잡 핸들.

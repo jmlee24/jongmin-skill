@@ -52,18 +52,21 @@ T1이 6건을 하나씩 재판정 — 6건 전부 현재 HEAD에도 유효, §8�
 ## 기본 패턴 (백그라운드 실행)
 
 ```bash
-mkdir -p "<scratchpad>/cx-<레인ID>"   # 선행 필수 — redirection이 codex 실행 전에 경로를 연다
-codex exec --sandbox read-only --json \
-  --output-last-message "<scratchpad>/cx-<레인ID>/out.md" \
-  "<프롬프트>" > "<scratchpad>/cx-<레인ID>/events.jsonl" 2> "<scratchpad>/cx-<레인ID>/err.log" < /dev/null
+D="<scratchpad>/cx-<레인ID>"; mkdir -p "$D"   # redirection이 codex 실행 전에 경로를 연다
+# 프롬프트는 파일 쓰기 도구로 "$D/prompt.md"에 만들고 stdin(-)으로 넘긴다.
+# 셸 인라인·heredoc 전달 금지 — 백틱·$가 셸에 먹혀 손상된 채 발진한다 (실측 2회)
+codex exec --sandbox read-only --json --output-last-message "$D/out.md" - \
+  < "$D/prompt.md" > "$D/events.jsonl" 2> "$D/err.log"
 ```
 
-`run_in_background`로 실행하고, 완료 알림 후 `out.md`만 읽으면 된다.
+`run_in_background`로 실행하고 **반환된 잡 핸들을 즉시 장부에 기록**한다 — 정지·생존 판정의
+식별자는 PID가 아니라 이 핸들이다. 셸 `&`를 덧붙여 이중 백그라운드화하지 않는다. 완료 알림 뒤
+`out.md`를 회수한다.
 **레인마다 디렉터리를 분리한다** — 병렬 CX(기본 3슬롯)가 같은 경로를 쓰면 서로의
 events·out을 truncate하고 thread ID·생존 판정이 섞인다. 접합 완료 후 디렉터리 소각.
 
-- `< /dev/null` 필수 — stdin이 열려 있으면 추가 입력 대기로 행이 걸린다. 붙이면
-  "Reading additional input from stdin..." 메시지가 떠도 행 없이 진행된다 (실측, 0.149)
+- 프롬프트는 stdin `-`로 파일에서 읽는다 — stdin이 터미널·열린 파이프면 추가 입력 대기로 행이
+  걸린다 (실측 0.149~0.150: 파일 stdin은 exec·resume 모두 정상, 원문 보존)
 - `--sandbox read-only`는 기본값이어도 **명시 고정**한다
 - `-m`/`--model` 지정 금지 — 티어 규칙([model-tiers.md](model-tiers.md))
 - stdout(JSONL 이벤트)과 stderr(진행 로그)를 **분리 캡처**한다 — 섞으면 파싱이 깨진다
@@ -76,8 +79,9 @@ events·out을 truncate하고 thread ID·생존 판정이 섞인다. 접합 완�
 `events.jsonl`의 `thread.started` 이벤트에서 `thread_id`를 파싱해 두고 (실측 확인: `{"type":"thread.started","thread_id":"..."}`):
 
 ```bash
-codex exec resume <THREAD_ID> -c 'sandbox_mode="read-only"' --json \
-  --output-last-message "<scratchpad>/cx-<레인ID>/out-2.md" "<후속 프롬프트>" < /dev/null
+D="<scratchpad>/cx-<레인ID>"   # 셸 호출마다 다시 선언
+codex exec resume <THREAD_ID> -c 'sandbox_mode="read-only"' --json --output-last-message "$D/out-2.md" - \
+  < "$D/prompt-2.md" > "$D/events-2.jsonl" 2> "$D/err-2.log"
 ```
 
 `resume --last`는 레인이 겹칠 수 있으므로 금지 — 항상 ID를 지정한다.
