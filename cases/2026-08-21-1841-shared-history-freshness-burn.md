@@ -27,3 +27,7 @@ executor-prompt 실물 예시 33줄이 이미 구체적인 템플릿을 반복�
    `접합 전 freshness 필드 완료 확인 ([codex-lane.md](../../shared/codex-lane.md) freshness rule)`
 1-c. executor-prompt 예시 15줄 이하로, 절약분에 규약 복제 기본문(별도 케이스) 삽입.
 예상: 약 −128줄.
+
+**잔여 (2026-08-29 실측)**: 1.9.0 소각은 conductor·handoff·warplan·skill-forge 4파일만 — loop(111-144,
+34줄)·sortie(91-120, 30줄)·deep-audit(61-80, 20줄) 이력 84줄이 skill-forge 10줄 규약 위반 상태로 잔존.
+validate가 이력 절 존재를 요구하지 않고 직접 참조 0 — 동작 불변 소각 가능 (재집행 대상).

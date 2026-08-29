@@ -17,3 +17,8 @@ CX 구조 분석 (n=0 — 첫 실전 계측 전). time-ledger.mjs:20 덮어쓰�
 ## 제안 (배치에서 판정)
 첫 실전 웨이브 계측 후 판정 — 어휘 확장은 실제 병목 질문이 생긴 뒤에 (선제 확장은 과설계).
 덮어쓰기는 회차 suffix 허용 정도의 최소 수정 후보.
+
+**대안 (2026-08-29 원칙 감사)**: 이벤트 8종 확장 대신 범용 phase 스키마 — `timestamp | actor | phase |
+start|done|caught | work-id`, phase = write/land/verify/judge/review/recheck/docs/exclusive/**curation**/
+rework. report: makespan·phase 임계경로·T1 순수 대기·rework. 케이스 큐레이션 시간도 계측 대상 — 원칙
+④(시간) 위반 판정의 직접 근거가 "측정 불가"였다.
