@@ -18,3 +18,7 @@ venv·미추적 자산 의존 레포에서 worktree 레인 발진 → 각 레인
 Preflight 매니페스트에 공유 실행 환경(venv/toolchain 경로)·gitignored fixture의 worktree 제공 방식
 명시 → **worktree bootstrap을 스크립트·매니페스트로 위임**, 레인 즉흥 링크 생성 금지. 이 축은 4회
 관측(1.9.0 표준 문구로도 미해결) — 문구가 아니라 스크립트 층이 필요하다는 근거.
+
+**관측 추가 (2026-09-01 YNprinting)**: 5회째 — 레인 5개 전부 .env·TestCases/ 결손으로 같은 테스트 1건
+red 보고, T1이 프롬프트마다 "환경 갭이니 고치지 마라"를 수동 복제. 보고 제안: executor 4)규약 복제에
+**환경 갭 선언 슬롯** 표준화 — Preflight에서 "worktree에 없는 것" 1회 측정 → 전 레인 자동 복제.
