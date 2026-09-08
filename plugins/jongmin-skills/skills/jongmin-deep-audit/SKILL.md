@@ -60,21 +60,6 @@ CONFIRMED 항목의 conductor 웨이브 입력 변환 제안 — major/critical 
 
 ## 이력
 
-<details><summary>v1.2 (2026-08-11, 질문 정책 반영)</summary>
-
-스코프 확정을 "사용자와 확정"에서 "인자 기반 + 전체 기본값 + 보고 명시"로 전환
-(question-policy.md 신설, Claude+CX 합의 — 스코프는 질문이 아니라 기본값+보고 사항).
-</details>
-
-<details><summary>v1.1 (2026-08-08, 실전 검증 반영)</summary>
-
-실전 1회 완료 (skilltest 픽스처): 심은 결함 3종 전수 검출 + 추가 발굴, CX 오판 1건을 T1 실측으로
-REFUTED — 비대칭 규칙 실증. 운용 제약 3건 추가 (단독 턴, Bash 계약, CX 정적 분석 한정).
-</details>
-
-<details><summary>v1 (2026-08-08)</summary>
-
-family-plan-v2 기반 초판. dev-conductor 리뷰 레인 철학(자기승인 금지, 반증 방법 필수)을
-저장소 전체로 확장. 이중 판정의 역할 배치는 교차 리뷰 비대칭 연구(arxiv 2607.21656) 반영 —
-CX 소견 자동 채택 금지, 불일치는 T1 실측.
-</details>
+폐기 결정만 남긴다 (릴리스 서사는 git 이력, v1 2026-08-08 ~ 현재):
+- 스코프를 사용자와 확정하는 절차 폐기 — 인자 기반 + 전체 기본값 + 보고 명시 (v1.2)
+- CX 소견 자동 채택 금지 유지 — 실전 1회에서 CX 오판 1건을 T1 실측으로 REFUTED (v1.1)

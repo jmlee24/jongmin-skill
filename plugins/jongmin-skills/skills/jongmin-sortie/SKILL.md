@@ -90,31 +90,7 @@ argument-hint: "<작업> [귀환 예정 시각]"
 
 ## 이력
 
-<details><summary>v1.3 (2026-08-11, 부재 중 전진기 특화 — 유예 3분류·귀환 배치 질문)</summary>
-
-사용자 피드백(질문 뭉텅이화) + Claude+CX 합의 반영. 정체성을 부재 중 전진기(되돌릴 수 있는
-전진 최대화)로 재정의. 유예 장부에 defer/gate/block 3분류 태그 (question-policy.md 신설).
-CX 역할을 결정 유예 감시자로 명확화 — 보수 기본값의 반박+되돌리는 법만 생성, 결정 대행 금지.
-귀환 보고를 사용자 배치 질문 1세트로 재구성 (지금 답할 것 vs 나중에 바꿀 것 분리).
-</details>
-
-<details><summary>v1.2 (2026-08-09, Stop 가드·CX 공동 판단)</summary>
-
-loop v2와 같은 Stop 가드 공유(mode:"sortie", 데드라인 기반) — 부재 중 자의적 턴 종료를 되민다.
-사용자 방향 반영: 중대 유예 결정은 CX 반박 자문을 곁들인 공동 판단으로 격상 (소견·채택 여부
-장부 기록, 자동 채택 금지 유지). 권한 매니페스트 preflight 추가.
-</details>
-
-<details><summary>v1.1 (2026-08-08, 실전 검증 반영)</summary>
-
-description·본문을 슬래시 전용으로 정합 (발동 게이트 실측). disallowed-tools 차단이 동일 권한
-계층에서 실제 작동함을 deep-audit Edit/Write 거부로 간접 실측 — 턴 전파 주의 추가.
-AskUserQuestion 직접 차단 실측은 사용자 슬래시 호출 대기 중.
-</details>
-
-<details><summary>v1 (2026-08-08)</summary>
-
-family-plan-v2 기반 초판. 질문 금지를 disallowed-tools로 하드 강제 (공식 문서의 autonomous loop
-예시 패턴), preflight 일부를 dynamic context injection으로 자동화. 유예 장부 4요소 규격은 ledger.md.
-런타임 차단 실측(질문 유도 프롬프트 3종)은 첫 실전 전 수행 예정 — 미작동 시 프롬프트 계약 폴백.
-</details>
+폐기 결정만 남긴다 (릴리스 서사는 git 이력, v1 2026-08-08 ~ 현재):
+- CX의 결정 대행 폐기 — 보수 기본값의 반박과 되돌리는 법만 생성 (v1.3)
+- 귀환 시 개별 질문 폐기 — 배치 1세트, 지금 답할 것과 나중에 바꿀 것 분리 (v1.3)
+- disallowed-tools 차단이 같은 턴 후속 스킬에 전파됨을 실측 — 본문 경고 유지 (v1.1)

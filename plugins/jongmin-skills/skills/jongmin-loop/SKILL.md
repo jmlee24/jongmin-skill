@@ -110,35 +110,8 @@ completed는 가드가 되민다 (S2 계약). 실행자의 "완료했다"는 게
 
 ## 이력
 
-<details><summary>v2.1 (2026-08-11, 완료 조건 폐쇄기 특화 — pipeline conservative)</summary>
-
-사용자 피드백(백그라운드 저활용·CX 공격적 활용) + Claude+CX 합의 반영. 정체성을 완료 조건
-폐쇄기로 명시. 루프 절차를 pipeline conservative로 재편 — quick 게이트(critical만)만 동기,
-deep·CX는 SHA 고정 백그라운드 + 리뷰 큐(ledger.md 4절), 태스크 간 파일·API·픽스처 겹침 시
-파이프라이닝 자동 해제. CX는 매 반복 상시 대신 리스크 트리거 기반 (CX 판정: 반복형 상시
-투입은 접합 큐 오염 — 사용자의 "시간 낭비 금지" 제약에 따라 T1이 CX 손을 들어줌).
-종료 게이트에 리뷰 큐 pending 0 조건 추가. 완료 조건 모호화는 항상 block(목적지 변경 금지).
-</details>
-
-<details><summary>v2 (2026-08-09, Stop 가드 도입)</summary>
-
-실측된 실패(취침 중 10분 만에 정지)에서 재설계. 원인: 절차 문서만으로는 턴 종료를 못 막음 +
-질문 차단 부재. ralph(OMC)의 전역 Stop 훅+상태 파일+완료 약속 메커니즘을 자기 구현으로 이식
-(`scripts/loop-stop-guard.mjs`, 플러그인 hooks.json). Codex 점검 반영: no-progress 백스톱(3회),
-stale 자동 은퇴(24h·데드라인·max), 경로 정규화(POSIX↔Windows 실측), exit_signal 5종, 권한
-매니페스트, AskUserQuestion frontmatter 차단(중간 질문 방지 우선), 스코프 고정(ralph의 스토리
-추가 미채용 — "시킨 것만" 방향). 가드 스크립트는 샌드박스 실측 4종(no-op/차단/no-progress
-은퇴/데드라인 은퇴) 통과. stop_hook_active로 allow하는 통설 방어는 기각 — 2번째 반복에서
-루프가 죽는다. 무한 차단 방어는 백스톱이 담당.
-</details>
-
-<details><summary>v1.1 (2026-08-08, 실전 검증 반영)</summary>
-
-발동 게이트 실측(모델 호출 차단 + 복제 금지 확인) 반영: description·본문을 슬래시 전용으로 정합.
-</details>
-
-<details><summary>v1 (2026-08-08)</summary>
-
-family-plan-v2 기반 초판. ralph-claude-code의 이중 종료 게이트·서킷 브레이커, ghuntley의
-one-task-per-loop 채용.
-</details>
+폐기 결정만 남긴다 (릴리스 서사는 git 이력, v1 2026-08-08 ~ 현재):
+- stop_hook_active로 allow하는 통설 방어 기각 — 2번째 반복에서 루프가 죽는다. 무한 차단 방어는 백스톱 담당 (v2)
+- CX 매 반복 상시 투입 폐기 — 접합 큐 오염. 리스크 트리거 기반으로 (v2.1)
+- ralph의 스토리 추가 미채용 — 스코프 고정, 시킨 것만 (v2)
+- 완료 조건 모호화 시 재협상 폐기 — 항상 block, 목적지 변경 금지 (v2.1)
