@@ -46,4 +46,8 @@ status: pending                     # pending | applied | rejected
   버전 bump 1회 → 반영 케이스 `status: applied` + `applied-version`, 기각은 `rejected` + 사유 →
   배치 커밋 메시지에 처리한 케이스 파일 목록(이중 배치 멱등 방지). 마지막 배치일은 별도 상태
   파일 없이 applied 케이스의 git 이력으로 산출한다.
+- **입력 범위**: pending만(applied·rejected는 읽지 않는다). 오래된 pending은 인용 조항의 생존을 먼저 확인 —
+  실패 형태가 성립 불가할 때만 rejected(사유: 조항 변경), 표현 변경은 pending 유지. rejected도 독립
+  사례 집계에는 남는다. 축 단위로 세션을 나눌 수 있다 — 세션마다 커밋 가능, 버전 bump·CX 교차·처리
+  케이스 목록 합산은 배치 종료 세션이 1회 수행한다.
 - 트리거 수치(5건·14일)는 초기값 — 배치 2~3회 후 대기시간·채택률 실측으로 재조정.

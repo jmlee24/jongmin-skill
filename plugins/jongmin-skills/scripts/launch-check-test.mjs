@@ -59,6 +59,32 @@ fs.writeFileSync(pp, `[임무] x\nOwned files: a.txt\nbranch lane/x\n3) 검증: 
 run("prompt gate typo", { branch: "lane/x" }, 1, ["--prompt", pp]);
 fs.writeFileSync(pp, `[임무] x\nbranch lane/x\n3) 검증: npm test\n`);
 run("prompt owned omitted", { branch: "lane/x" }, 1, ["--prompt", pp]);
+// 리뷰 지적(1.10.0 CX): 저장소 밖 경로·부분 문자열 우회·신규/Frozen 누락·타입 오류·git 오류
+run("owned outside repo (..)", { owned: ["../a.txt"] }, 1);
+run("new outside repo (abs)", { allowedNew: ["/outside/x.txt"] }, 1);
+run("new escapes via ../ dir", { allowedNew: ["../", "../x.txt"] }, 1);
+fs.writeFileSync(pp, "[임무] x\nOwned files: a.txt.bak\n3) 검증: npm testing\n");
+run("prompt suffix mutant (a.txt.bak / npm testing)", {}, 1, ["--prompt", pp]);
+fs.writeFileSync(pp, `[임무] x\nOwned: "a.txt"\nFrozen: ${base}\n검증: \`npm test\`\n`);
+run("prompt tokens in quotes/backticks ok", { frozenSha: base }, 0, ["--prompt", pp]);
+fs.writeFileSync(pp, "[임무] x\nOwned: a.txt\n검증: npm test\n");
+run("prompt new-file list omitted", { allowedNew: ["src/new.txt"] }, 1, ["--prompt", pp]);
+run("prompt frozen sha omitted", { frozenSha: base }, 1, ["--prompt", pp]);
+run("prompt branch omitted", { branch: "lane/x" }, 1, ["--prompt", pp]);
+run("prompt worktree omitted", { worktree: wt }, 1, ["--prompt", pp]);
+run("manifest gates not array -> exit 3", { gates: null }, 3);
+run("manifest owned has non-string -> exit 3", { owned: [1] }, 3);
+run("manifest base missing -> exit 3", { base: "" }, 3);
+run("repo dir missing -> exit 3", { repo: path.join(tmp, "no-repo") }, 3);
+run("base sha unknown -> exit 1 (absence, not error)", { base: "0000000000000000000000000000000000000000" }, 1);
+// git 실행 오류 주입: PATH를 비워 git 자체를 못 찾게 한다 → 부재가 아니라 exit 3
+{
+  n++;
+  const mp = path.join(tmp, "m-nogit.json");
+  fs.writeFileSync(mp, JSON.stringify({ repo, base, owned: ["a.txt"], allowedNew: ["z.txt"], gates: ["npm test"] }));
+  const r = spawnSync(process.execPath, [SCRIPT, mp], { encoding: "utf8", env: { ...process.env, PATH: "", Path: "" } });
+  if (r.status === 3) console.log("PASS git unavailable -> exit 3"); else { failed++; console.log("FAIL git unavailable -> exit " + r.status + "\n" + r.stdout); }
+}
 // 사용법·오류 exit 3
 const r3 = spawnSync(process.execPath, [SCRIPT], { encoding: "utf8" });
 n++; if (r3.status !== 3) { failed++; console.log("FAIL usage exit 3 (got " + r3.status + ")"); } else console.log("PASS usage exit 3");
