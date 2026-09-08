@@ -158,7 +158,7 @@ node plugins/jongmin-skills/scripts/validate.mjs
 ① `claude plugin validate` — stdout warning 0건 판정 (이 명령은 warning이 있어도 exit 0을
    반환하므로 exit code를 신뢰하지 않는다). **①의 실제 검증 범위는 마켓플레이스 매니페스트
    1건뿐이다** — 스킬 본문·frontmatter는 검사하지 않는다.
-② Stop 가드·state CLI 회귀 테스트 (guard-test + state-test, tmpdir 격리·실장부 불변 단언 포함)
+② Stop 가드·state CLI·발진 검증기 회귀 테스트 (guard-test + state-test + launch-check-test, tmpdir 격리·실장부 불변 단언 포함)
 ③ 링크 무결성 — shared 상호참조·동일 디렉터리·README 상대 링크 (디렉터리 링크 허용)
 ④ description 검사 — 변경 스킬은 확정 문자열 완전 일치(④-A), 미변경 스킬은 회귀 lint(④-B:
    단일 라인·비발동 절 존재·트리거 부분문자열 중첩 0건)
@@ -170,6 +170,15 @@ node plugins/jongmin-skills/scripts/validate.mjs
 부분 실행 `--only=3,4`, 다른 트리 검사 `--root=<dir>` (픽스처 음성 확인용).
 
 ## 변경 이력
+
+### v1.10.0 (2026-09-08) — 2차 배치 1차분: 발진 내용 검증기 · improve 입력 규약 · 이력 소각
+
+Preflight의 실존 확인 산문을 집행점으로 이동 — `scripts/lane-launch-check.mjs`가 Owned BASE 실존·신규 파일
+부재+부모 정책·Frozen SHA·worktree 등록·브랜치·게이트 전건·프롬프트 원문 포함을 판정하고 `launch_check`
+장부 이벤트로 pass/block을 계측한다(exit 0 전 Agent 호출 금지, 테스트 20건). skill-forge improve 입력은
+pending만 + 인용 조항 생존 확인 + 축 단위 세션 분할. loop·sortie·deep-audit 이력 절 규약 소각(−66줄).
+근거: 실전 보고 3건 + Claude Code Workflow(ultracode) 비교 분석(케이스 2026-09-08)이 같은 축에 독립 도달.
+보류(케이스 기록): PreToolUse 훅 차단, Workflow 실행 백엔드, bootstrap·자원 lock·compile-block.
 
 ### v1.9.2 (2026-08-27) — 긴급 수정 2건: CX 프롬프트 stdin 전달 · 잡 핸들 전용 정지
 

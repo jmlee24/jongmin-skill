@@ -30,3 +30,8 @@ status: pending
   확대 제한, P2 → growth-control, P3·P4 → hypothesis-fact·unverifiable-citations). YNprinting 특화(문서
   강제 코드 1,811줄·색인 591줄)는 그 프로젝트의 선택 — 패밀리 규약으로 일반화하지 않음
 - 즉시 가능한 동작 불변 소각: 이력 84줄 (history-freshness-burn 재집행)
+
+**관측 추가 (1.10.0, 2026-09-08)**: ① UNVERIFIED 해소 — 공식 문서(code.claude.com/docs/en/skills) 원문 "combined
+description and when_to_use text is truncated at 1,536 characters" — 패밀리 규약 정확, CX "1,024자"는 오류.
+② 이력 84줄 소각 집행(loop·sortie·deep-audit −66줄). ③ 앙상블: Claude-only 적대적 검증 생존 권고를 CX가 2건
+정정(ultracode 비교 케이스) — 이종 교차의 실증. ④ 시간 장부 tsv는 이 PC에 0건 — 계측 선행 조건 미충족 지속.

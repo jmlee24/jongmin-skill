@@ -66,3 +66,8 @@ heredoc·PIPESTATUS 함정 3종 — Bash 의존 스크립트는 Windows에서 �
 **관측 추가 (2026-09-01)**: 소유권 맵 실존 확인(v4.1 실적 조항 — "ls로 실존 확인 후 배정")을 T1이
 건너뛰어 metrics.py(실제 metrics_logger.py) 배정 → executor가 보고. 지시는 있으나 산문이라 건너뜀 —
 Preflight 실존 일괄 확인 **명령**이 필요하다는 3번째 독립 보고. 소유권 맵 검증은 진입점 스크립트 1순위.
+
+**부분 적용 (1.10.0, 2026-09-08)**: 축 ① 중 Owned 실존·신규 파일 부재+부모 정책·Frozen SHA·worktree 등록·
+브랜치·게이트 전건·프롬프트 원문 대조를 `scripts/lane-launch-check.mjs`로 집행(conductor 2절 발진 게이트,
+launch_check 장부 이벤트). 미적용: bootstrap·자원 lock·compile-block 스키마·주장 생명주기·PreToolUse 훅 —
+다음 배치. guardrail 케이스는 4건이 아니라 5건(09-01 추가). 4번째 독립 도달: 2026-09-08 ultracode 비교 케이스.

@@ -40,3 +40,8 @@ cases/ 63건·83KB. 평균 22.8줄·최대 39줄(본문 상한만으론 절감 �
 규모. P2 자기 적용 경고: 인용률(related 수)은 사용 증거가 아니다 — 출처 편중률·자기 유지율은 삭제 검토
 **신호**로만(임계 정하면 차단 게이트가 되어 P1 재현). 반증 조건: dossier/index 후 큐레이션 벽시계·본문
 읽기량 감소, applied가 실제 규칙 변경·재작업 방지에 연결된 비율 기록.
+
+**판정 (1.10.0, 2026-09-08, 사용자)**: 배치 세션 비용은 허용 — 인덱스·dossier·archive는 **보류**. 대신
+skill-forge improve 입력 규약을 "resolved 제외 / pending은 인용 조항 생존 확인 후 STALE이면 본문 미독해로
+rejected / 축 단위 세션 분할"로 교체. 첫 적용: 1.8.x pending 15건 신선도 검사 — 인용 조항이 바뀐 건 0건(전부
+LIVE, pending 유지). 케이스 README 템플릿의 `status: pending` 예시가 집계에 잡혀 pending 수가 1 과다.

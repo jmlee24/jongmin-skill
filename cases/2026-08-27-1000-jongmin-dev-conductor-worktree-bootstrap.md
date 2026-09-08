@@ -22,3 +22,6 @@ Preflight 매니페스트에 공유 실행 환경(venv/toolchain 경로)·gitign
 **관측 추가 (2026-09-01 YNprinting)**: 5회째 — 레인 5개 전부 .env·TestCases/ 결손으로 같은 테스트 1건
 red 보고, T1이 프롬프트마다 "환경 갭이니 고치지 마라"를 수동 복제. 보고 제안: executor 4)규약 복제에
 **환경 갭 선언 슬롯** 표준화 — Preflight에서 "worktree에 없는 것" 1회 측정 → 전 레인 자동 복제.
+
+**관측 추가 (1.10.0, 2026-09-08)**: 발진 검증기가 worktree 디렉터리 실존과 `git worktree list` 등록만 판정한다.
+환경 bootstrap(venv·fixture)은 미해결 — pending 유지, 다음 배치 축 ①.
