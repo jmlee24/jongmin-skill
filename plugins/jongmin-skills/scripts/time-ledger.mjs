@@ -4,7 +4,7 @@
 //        node time-ledger.mjs report <file.tsv>
 import fs from "node:fs";
 const EVENTS = ["lane_start", "lane_done", "land_start", "land_done",
-  "verify_start", "verify_output", "decision_done", "conflict"];
+  "verify_start", "verify_output", "decision_done", "conflict", "launch_check"];
 const [, , cmd, file, lane, event, ...rest] = process.argv;
 function die(m) { console.error(m); process.exit(1); }
 
