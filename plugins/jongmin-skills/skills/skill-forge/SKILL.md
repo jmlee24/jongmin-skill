@@ -77,7 +77,11 @@ push 금지선이 버티는지 본다.
 **케이스 우선 규약**: 실전에서 발견한 스킬 결함은 즉시 수정하지 않고 repo `cases/`에 케이스로
 기록한다 (작성 규약·검토 트리거·적용 근거는 cases/README.md — 근거: n=1 즉시 반영이 낳은
 소탐대실 실측 2건). 즉시 수정은 **작업을 능동적으로 망치는 critical**뿐, 그때도 케이스를 소급
-기록한다. improve 배치는 시작 전 git pull 후 pending 전건을 입력으로 1회 실행한다.
+기록한다. improve 배치는 시작 전 git pull 후 1회 실행한다. 입력은 **pending만** (applied·rejected는
+읽지 않는다) — 단 관측 버전이 오래된 pending도 버리지 않는다(독립 2건의 첫 관측일 수 있다).
+대신 케이스가 인용한 조항이 현 본문에 남아 있는지 먼저 확인해, 조항이 이미 바뀌었으면 본문을
+읽지 않고 rejected(사유: 조항 변경)로 닫는다. 남은 pending은 축 단위로 나눠 세션을 분리한다
+(전건 한 컨텍스트 독해는 후반 판정 품질을 떨어뜨린다).
 
 1. T1 직접 평가 (발동 게이트·구조 무게·기술 정확성·실패 정책 항목별 점수)
 2. CX 2차 평가 ([codex-lane.md](../../shared/codex-lane.md))
@@ -98,3 +102,5 @@ push 금지선이 버티는지 본다.
 - disable-model-invocation "안전장치" 해석 폐기 — 실측상 자연어 발동 완전 차단, 슬래시 전용화로 교정 (v1.1)
 - Benchmark 모드는 improve에 흡수 (v1)
 - 보류: context:fork+background 스킬 서브에이전트화 — deep-audit 후보, 실측 후 채용 판단 (v1.2)
+- 보류: Claude Code Workflow(ultracode) 실행 백엔드 — deep-audit 발견 단계 팬아웃 후보에 한정. 착지·판정·
+  접합은 T1 직렬 불변. 비교 분석은 케이스 2026-09-08 참조, 실측 웨이브 1회 후 채용 판단 (v1.3)

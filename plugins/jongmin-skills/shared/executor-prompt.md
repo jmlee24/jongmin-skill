@@ -52,7 +52,9 @@
 
 ## 병렬 쓰기 확장 — parallel-write 레인 필수 (= 6요소: 5요소 + 소유권·계약)
 
-병렬 쓰기 레인(conductor parallel-write 모드)에서는 5요소에 더해 6번째 요소를 필수로 채운다:
+병렬 쓰기 레인(conductor parallel-write 모드)에서는 5요소에 더해 6번째 요소를 필수로 채운다.
+Owned·신규 파일·Frozen SHA·게이트 명령의 실존과 프롬프트 원문 포함 여부는 발진 검증기
+(`scripts/lane-launch-check.mjs`, conductor 2절)가 판정한다 — exit 0이 발진 조건이다:
 
 ```
 6) 소유권·계약

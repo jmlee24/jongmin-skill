@@ -71,8 +71,9 @@ node <플러그인루트>/scripts/time-ledger.mjs append <장부디렉터리>/ti
 node <플러그인루트>/scripts/time-ledger.mjs report <장부디렉터리>/time-events.tsv
 ```
 
-이벤트 8종: `lane_start / lane_done / land_start / land_done / verify_start / verify_output /
-decision_done / conflict`. report가 레인 작업·미착지 큐 대기(lane_done→land_start)·착지·검증
+이벤트 9종: `lane_start / lane_done / land_start / land_done / verify_start / verify_output /
+decision_done / conflict / launch_check`. `launch_check`는 발진 검증기(`lane-launch-check.mjs`
+--ledger)가 pass·block과 실패 항목을 직접 기록한다 — 차단 건수·사유가 검증기 유지·철회의 근거다. report가 레인 작업·미착지 큐 대기(lane_done→land_start)·착지·검증
 실행 대기·T1 판정 구간(verify_output→decision_done)·충돌 횟수를 자동 계산한다 — 발진 게이트
 튜닝·머지 트레인 도입 여부는 추정이 아니라 이 실측으로 판단한다.
 
