@@ -42,7 +42,7 @@ function git(argv, cwd = m.repo) {
     const err = (e.stderr || "").toString();
     if (e.code === "ENOENT") die("git not found on PATH");
     if (MISSING_RE.test(err) || (argv[0] === "ls-tree" && e.status === 128 && /not a tree object/i.test(err))) return { ok: false, out: "" };
-    if (argv[0] === "rev-parse" && argv.includes("-q")) return { ok: false, out: "" }; // --verify -q: 조용한 부재
+    if (argv[0] === "rev-parse" && argv.includes("-q") && e.status === 1) return { ok: false, out: "" }; // --verify -q: 부재는 exit 1, 그 외는 오류
     die(`git ${argv.join(" ")} failed (${e.status}): ${err.trim().split("\n")[0] || e.message}`);
   }
 }
@@ -119,7 +119,8 @@ if (promptPath) {
   let text;
   try { text = fs.readFileSync(promptPath, "utf8").replace(/\\/g, "/"); } catch (e) { die("prompt unreadable: " + e.message); }
   const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const hasToken = (needle) => new RegExp(`(^|[\\s"'\`(\\[<])${esc(norm(needle))}(?=$|[\\s"'\`)\\]>,;:])`, "m").test(text);
+  // 디렉터리 항목("pkg/")은 슬래시까지 원문이다 — norm으로 벗기면 뒤 경계가 "/"를 거부해 정상 발진을 막는다 (CX 재확인 지적)
+  const hasToken = (needle) => new RegExp(`(^|[\\s"'\`(\\[<])${esc(needle.replace(/\\/g, "/"))}(?=$|[\\s"'\`)\\]>,;:])`, "m").test(text);
   const must = [
     ...m.gates.map((g) => ["prompt.gate", g]),
     ...m.owned.map((p) => ["prompt.owned", p]),

@@ -67,6 +67,8 @@ fs.writeFileSync(pp, "[임무] x\nOwned files: a.txt.bak\n3) 검증: npm testing
 run("prompt suffix mutant (a.txt.bak / npm testing)", {}, 1, ["--prompt", pp]);
 fs.writeFileSync(pp, `[임무] x\nOwned: "a.txt"\nFrozen: ${base}\n검증: \`npm test\`\n`);
 run("prompt tokens in quotes/backticks ok", { frozenSha: base }, 0, ["--prompt", pp]);
+fs.writeFileSync(pp, `[임무] x\r\nOwned: a.txt, src/b.txt\r\n신규 허용: pkg/, pkg/init.txt, src/new.txt\r\nFrozen: ${base}\r\nbranch lane/x\r\nworktree ${wt}\r\n검증: npm test\r\n`);
+run("prompt full with dir entry (pkg/) ok", { owned: ["a.txt", "src/b.txt"], allowedNew: ["pkg/", "pkg/init.txt", "src/new.txt"], frozenSha: base, worktree: wt, branch: "lane/x" }, 0, ["--prompt", pp]);
 fs.writeFileSync(pp, "[임무] x\nOwned: a.txt\n검증: npm test\n");
 run("prompt new-file list omitted", { allowedNew: ["src/new.txt"] }, 1, ["--prompt", pp]);
 run("prompt frozen sha omitted", { frozenSha: base }, 1, ["--prompt", pp]);
