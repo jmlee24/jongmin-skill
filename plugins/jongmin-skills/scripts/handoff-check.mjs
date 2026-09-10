@@ -121,6 +121,7 @@ function checkPathToken(tok, lineNo) {
   if (/[^\x00-\x7F]/.test(t)) return;
   if (/^[\w.-]+\.(com|net|org|io|dev|ai|kr|co)(\/|$)/i.test(t)) return;
   if (/^\/[a-z][\w-]*(:[\w-]+)*$/i.test(t)) return;
+  if (/^[A-Z0-9_]+(\/[A-Z0-9_]+)+$/.test(t)) return; // 대문자 열거 VERIFIED/UNVERIFIED (실전 표본)
   if (/^[\\/]+$/.test(t) || /^\.{1,2}[\\/]?$/.test(t)) return;
   // 파일:라인 / 파일:라인-라인 — 구분자 없는 루트 파일(README.md:12)도 여기서 잡는다 (CX#1)
   const fl = t.match(/^(.+?):(\d+)(?:-(\d+))?$/);

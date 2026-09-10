@@ -32,7 +32,7 @@ const snapshot = [
   "비율 3/4 는 경로가 아니다. URL https://example.com/a/b 도 아니다. <placeholder>/x 도 아니다. 숫자 1789029000 도 SHA가 아니다.",
   "루트 파일 인용 README.md:3 과 nope-root.md:12, 반복 언급 cx-absent.mjs, 명시 숫자 SHA: HEAD SHA 1111111111111111111111111111111111111111",
   "다음 단계: cx-absent.mjs 수정",
-  "호스트 chatgpt.com/backend-api/usage 도, 조사 붙은 account/rateLimits/read와 5h/주간/ctx는 도, 슬래시 명령 /jongmin-skills:hud-setup 과 /code-review 도, 기호 ④-C/①/⑦ 도 경로가 아니다.",
+  "호스트 chatgpt.com/backend-api/usage 도, 조사 붙은 account/rateLimits/read와 5h/주간/ctx는 도, 슬래시 명령 /jongmin-skills:hud-setup 과 /code-review 도, 기호 ④-C/①/⑦ 도, 열거 VERIFIED/UNVERIFIED/CONTRADICTED 도 경로가 아니다.",
   "",
 ].join("\n");
 const snapPath = join(repo, "snap.md");
@@ -54,7 +54,7 @@ expect(/^MISSING path scripts\/nope\.mjs /m.test(out), "script argument that doe
 expect(!/nonexistent-bin-xyz/.test(out), "unknown binary names are not checked (no false positives)");
 expect(/^MISSING path ~\/\.claude\/jongmin-ledgers\/does-not-exist-xyz\/progress\.md /m.test(out), "~ path expanded and checked");
 expect(!/ 3\/4 /.test(out) && !/example\.com/.test(out) && !/placeholder/.test(out), "ratios, URLs and placeholders are skipped");
-expect(!/chatgpt\.com/.test(out) && !/rateLimits/.test(out) && !/주간/.test(out) && !/jongmin-skills:hud-setup/.test(out) && !/code-review/.test(out) && !/④/.test(out), "bare hostnames, non-ASCII tokens and slash commands are skipped");
+expect(!/chatgpt\.com/.test(out) && !/rateLimits/.test(out) && !/주간/.test(out) && !/jongmin-skills:hud-setup/.test(out) && !/code-review/.test(out) && !/④/.test(out) && !/CONTRADICTED/.test(out), "bare hostnames, non-ASCII tokens, slash commands and CAPS enums are skipped");
 expect(/^handoff-check: \d+ checked, \d+ ok, [1-9]\d* unverified$/m.test(out), "summary line present");
 expect(/^OK file:line README\.md:3 /m.test(out), "root-level file:line that exists → OK (CX#1)");
 expect(/^MISSING path nope-root\.md /m.test(out), "root-level file:line with missing file → MISSING (CX#1)");
@@ -67,7 +67,7 @@ const ann = r.stdout.split("\n");
 expect(/\[UNVERIFIED: sha deadb33f\]$/.test(ann[0]), "annotate marks fabricated SHA on its line");
 expect(/\[UNVERIFIED: .*file:line src\/app\.mjs:99.*path src\/missing\.mjs.*\]$/.test(ann[1]), "annotate lists all problems of a line");
 expect(/cx-absent\.mjs\]$/.test(ann[6]), "annotate marks repeated item on its later line too (CX#2)");
-expect(!/UNVERIFIED/.test(ann[7]) && !/UNVERIFIED/.test(ann[8]), "annotate leaves clean lines untouched");
+expect(!/\[UNVERIFIED:/.test(ann[4]) && !/\[UNVERIFIED:/.test(ann[7]) && !/\[UNVERIFIED:/.test(ann[8]), "annotate leaves clean lines untouched");
 expect(/handoff-check: \d+ checked, \d+ unverified/.test(r.stderr), "annotate summary goes to stderr");
 
 // 지연 상한: 8자리 hex 후보 600개 → git 프로세스 1회, 2초 미만 (CX#5)
