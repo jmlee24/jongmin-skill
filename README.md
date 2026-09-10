@@ -41,6 +41,9 @@
 
 ## 스킬 목록
 
+**호출 규약(2026-09-10부터)**: 전 스킬 **슬래시 전용** — `/jongmin-skills:<이름>`. 자연어로는 어느 스킬도 발동하지
+않고, 스킬 설명이 세션 컨텍스트에 적재되지 않는다(컨텍스트 0). 단독 운영자가 스킬명을 알고 있다는 전제.
+
 ### [jongmin-dev-conductor](plugins/jongmin-skills/skills/jongmin-dev-conductor/SKILL.md) — 다중 레인 개발 편성
 
 **수행**: 병렬 접합기. 지휘부(메인 세션)는 구현을 직접 하지 않고 레인을 편성한다 — 쓰기
@@ -55,7 +58,7 @@
 
 **안 쓸 때**: 단일 파일·소규모 수정, 일상적 멀티파일 리팩토링, 프로토타입.
 
-**호출**: 자동 발동(조건 충족 시) 또는 "conductor", "레인 편성", "웨이브로 진행" 요청.
+**호출**: **슬래시 전용** — `/jongmin-skills:jongmin-dev-conductor <작업 또는 warplan 편성표>`.
 
 ### [jongmin-loop](plugins/jongmin-skills/skills/jongmin-loop/SKILL.md) — 완료 조건 반복 실행
 
@@ -99,7 +102,7 @@ executor-prompt 5요소로 즉시 컴파일 가능해야 계획 완성으로 친
 
 **안 쓸 때**: 단일 단계 작업, 이미 계획이 확정된 작업.
 
-**호출**: 자동 발동 또는 "warplan", "계획 짜줘".
+**호출**: **슬래시 전용** — `/jongmin-skills:jongmin-warplan <작업>`.
 
 ### [jongmin-deep-audit](plugins/jongmin-skills/skills/jongmin-deep-audit/SKILL.md) — 이중 모델 전면 구조 감사
 
@@ -114,7 +117,7 @@ executor-prompt 5요소로 즉시 컴파일 가능해야 계획 완성으로 친
 **안 쓸 때**: 특정 버그 하나의 원인 추적(직접 디버깅으로), 단일 파일 리뷰, 수정 작업.
 **주의**: 단독 턴에서 실행 — 도구 차단이 같은 턴의 후속 스킬에 전파된다.
 
-**호출**: 자동 발동 또는 "deep audit", "전면 감사", "아키텍처 점검".
+**호출**: **슬래시 전용** — `/jongmin-skills:jongmin-deep-audit [범위·의심 축]`.
 
 ### [skill-forge](plugins/jongmin-skills/skills/skill-forge/SKILL.md) — 스킬 제작·검증 메타 스킬
 
@@ -128,7 +131,7 @@ executor-prompt 5요소로 즉시 컴파일 가능해야 계획 완성으로 친
 
 **안 쓸 때**: 스킬이 아닌 일반 코드·문서 작업.
 
-**호출**: 자동 발동 또는 `forge <create|eval|pressure|improve> <대상>`.
+**호출**: **슬래시 전용** — `/jongmin-skills:skill-forge <create|eval|pressure|improve> <대상>`.
 
 ### [handoff](plugins/jongmin-skills/skills/handoff/SKILL.md) — 세션·계정 인수인계
 
@@ -141,7 +144,18 @@ executor-prompt 5요소로 즉시 컴파일 가능해야 계획 완성으로 친
 
 **안 쓸 때**: 단순 작업 요약 요청.
 
-**호출**: 자동 발동 또는 "handoff", "스냅샷 떠줘", "이어서 할 수 있게".
+**호출**: **슬래시 전용** — `/jongmin-skills:handoff <save|restore> [메모]`.
+
+### [jongmin-coproduce](plugins/jongmin-skills/skills/jongmin-coproduce/SKILL.md) — 비개발 산출물 공동 제작
+
+**수행**: 견적·계약 검토문·제작안·의사결정 메모·사실 브리프를 T1(Claude)과 CX(Codex)가 **공동 저자**로 만든다 —
+같은 원자료로 상대 초안을 보지 않고 각자 핵심 초안 → 대조해 절 단위 분담 집필 → 상호 검수(대체 문안 포함) →
+T1 통합(핵심 수치·인용은 원자료 재확인) → CX 통합본 검수 1회. 인도는 산출물 1개 + 중대 이견 시 짧은 부록.
+두 모델의 동의는 증거가 아니다. 실행(발주·서명·송금)으로 확장하지 않는다.
+
+**쓸 때**: 오답 비용이 큰 비개발 산출물. **안 쓸 때**: 코드·repo·아키텍처(→ warplan/deep-audit/conductor), 단순 질의응답, 잡학·취향.
+
+**호출**: **슬래시 전용** — `/jongmin-skills:jongmin-coproduce <산출물·질문> [자료 경로…]`.
 
 ### [hud-setup](plugins/jongmin-skills/skills/hud-setup/SKILL.md) — 사용량 HUD 설치 부속
 
@@ -189,6 +203,18 @@ node plugins/jongmin-skills/scripts/validate.mjs
 부분 실행 `--only=3,4`, 다른 트리 검사 `--root=<dir>` (픽스처 음성 확인용).
 
 ## 변경 이력
+
+### v1.12.0 (2026-09-10) — 전 스킬 슬래시 전용 · jongmin-coproduce 신설 · 네이티브 리뷰 접점 · HUD codex
+
+- **전 스킬 슬래시 전용**(disable-model-invocation) — 상시 적재 description 5건 제거(약 1.5KB/세션), 트리거 어휘 폐기.
+  skill-forge 정책: 슬래시 기본, 자연어 예외는 근거 기록. 반론(handoff 컴팩션 안전망)은 클코 자체 컨텍스트 요약으로 대체.
+- **jongmin-coproduce** — 비개발 산출물 공동 제작(독립 초안 → 분담 집필 → 상호 검수 → T1 통합). 초안 이름 crosscheck는
+  "검증"이 아니라 "공동 작업"이라는 사용자 요구로 재설계. CX 2회 자문 접합.
+- **네이티브 리뷰 접점**(케이스 2026-09-10 applied): 리뷰 항목 필드 계약(short_summary·failure_scenario·verdict, 외부 판정은
+  source_verdict), landing-check 「선택 외부 리뷰 — /code-review ultra」(권고만·사용자 실행분만 큐 등록), conductor §6 외부
+  리뷰 재확인 경로, 쓰기 레인 격리 Agent `isolation: "worktree"` 기본, codex-lane 생존 판정 알림 우선. 기각: quick/deep
+  개명, ultra 자동화, 네이티브 CONFIRMED 승격.
+- **HUD**: codex 사용량 세그먼트(ChatGPT 사용량 백엔드, auth.json 토큰), 모델 옆 effort 레벨. hud-test 37건.
 
 ### v1.11.0 (2026-09-10) — hud-setup: OMC HUD 대체 설치 부속
 
