@@ -60,7 +60,11 @@ function readStdinJson() {
   }
 }
 
+// Number(null)·Number("")·Number(true)가 유한수라, 값을 모르는 항목이 0%·1%로 그려졌다.
+// 숫자 또는 비어 있지 않은 숫자 문자열만 수치로 받고 나머지는 null → 게이지 자체를 그리지 않는다.
 function clampPct(v) {
+  if (typeof v === "string" && v.trim() === "") return null;
+  if (typeof v !== "number" && typeof v !== "string") return null;
   const n = Number(v);
   if (!Number.isFinite(n)) return null;
   return Math.max(0, Math.min(100, Math.round(n)));
@@ -305,7 +309,8 @@ async function main() {
   if (claude.length) line1.push(claude.join(" "));
 
   // [2] codex: 5h → wk 순 (Spark 등 additional_rate_limits는 파서에서 제외). ctx는 1줄 끝
-  const codex = (usage.codex?.buckets ?? [])
+  // NO_CODEX면 캐시가 남아 있어도 줄을 만들지 않는다 — 끈 항목이 계속 보이면 안 된다 (캐시 파일은 보존)
+  const codex = (codexDisabled ? [] : (usage.codex?.buckets ?? []))
     .slice()
     .sort((a, b) => (a.label.endsWith("5h") ? 0 : 1) - (b.label.endsWith("5h") ? 0 : 1))
     .map((b) => gauge(b.label.replace(/^codex /, ""), b.percent, b.resetsAt, nowMs, WARN_PCT, DANGER_PCT));

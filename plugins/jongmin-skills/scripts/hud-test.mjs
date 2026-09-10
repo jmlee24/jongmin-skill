@@ -2,6 +2,7 @@
 // hud 회귀 테스트 — validate.mjs check2가 실행한다. 네트워크 없이(JONGMIN_HUD_NO_API=1) 돈다.
 //   1) usage-hud.mjs: 정상 stdin / 빈 stdin / 깨진 JSON / rate_limits 없음 / 캐시된 모델 버킷
 //      → 항상 exit 0, 값 반영
+//      + NO_CODEX일 때 codex 줄 미출력 / 알 수 없는 사용률 미표시
 //   2) hud-setup.mjs: 격리 CLAUDE_CONFIG_DIR에서 install → check → uninstall 왕복,
 //      다른 설정 키 보존·백업 생성·래퍼 생성/삭제·비관리 statusLine 보존 확인
 //      + 미인식 인자 거부(exit 2, 무기록) / --check 종료 코드 / 래퍼의 손상 렌더러 폴백
@@ -120,6 +121,32 @@ expect(failCache.codex.fetchedAt >= t0 && failCache.codex.buckets[0]?.percent ==
 rmSync(cacheDir, { recursive: true, force: true });
 rmSync(join(isoDir, ".credentials.json"), { force: true });
 rmSync(codexHome, { recursive: true, force: true });
+
+// JONGMIN_HUD_NO_CODEX=1이면 캐시에 codex 버킷이 남아 있어도 codex 줄을 그리지 않는다 (D4)
+mkdirSync(cacheDir, { recursive: true });
+const codexCachePayload = JSON.stringify({
+  anthropic: { fetchedAt: Date.now(), scoped: [], global: {} },
+  codex: { fetchedAt: Date.now(), buckets: [{ label: "codex wk", percent: 20, resetsAt: null }] },
+});
+writeFileSync(join(cacheDir, "usage-cache.json"), codexCachePayload);
+r = spawnSync(process.execPath, [RENDERER], { input: sample, encoding: "utf-8", env: { ...env, JONGMIN_HUD_NO_CODEX: "1" }, timeout: 15_000 });
+expect(r.status === 0 && !/codex/.test(r.stdout), "renderer omits codex line when JONGMIN_HUD_NO_CODEX=1");
+expect(r.stdout.trim().split("\n").length === 1, "renderer prints one line when codex is disabled but cached");
+expect(JSON.parse(readFileSync(join(cacheDir, "usage-cache.json"), "utf-8")).codex?.buckets?.length === 1, "renderer leaves the codex cache file intact when codex is disabled");
+rmSync(cacheDir, { recursive: true, force: true });
+
+// 알 수 없는 사용률(null·""·true)은 0%가 아니라 미표시 — Number()가 유한수를 뱉는 값들 (D5)
+for (const bogus of [null, "", true]) {
+  const label = JSON.stringify(bogus);
+  r = run(RENDERER, [], JSON.stringify({
+    model: { display_name: "M" },
+    rate_limits: { five_hour: { used_percentage: bogus }, seven_day: { used_percentage: 46 } },
+    context_window: { used_percentage: 9 },
+  }));
+  expect(r.status === 0 && !/5h/.test(r.stdout), `renderer hides 5h gauge for used_percentage ${label}`);
+  expect(/wk.*46%/.test(r.stdout) && /ctx.*9%/.test(r.stdout), `renderer keeps other gauges for used_percentage ${label}`);
+}
+rmSync(cacheDir, { recursive: true, force: true });
 
 // --- 2) 설치기 왕복 ---
 const settingsPath = join(isoDir, "settings.json");
