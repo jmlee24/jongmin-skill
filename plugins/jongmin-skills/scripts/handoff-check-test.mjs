@@ -92,6 +92,33 @@ r = spawnSync(process.execPath, [CHECK, snapPath, "--cwd", repo, "--json"], { en
 let j = null; try { j = JSON.parse(r.stdout); } catch {}
 expect(j && j.ok === true && Array.isArray(j.results), "--json emits parseable result");
 
+// 따옴표로 감싼 스크립트 경로(D2) / 한글이 포함된 파일 경로(D3) — 둘 다 검사 0건으로 통과하던 결함
+mkdirSync(join(repo, "scripts"), { recursive: true });
+writeFileSync(join(repo, "scripts", "existing.mjs"), "export {};\n");
+// 한글 파일명은 셸을 거치면 cp949로 깨진다 — fs API로 직접 만든다
+writeFileSync(join(repo, "scripts", "한글이름.mjs"), Array.from({ length: 5 }, (_, i) => `line ${i + 1}`).join("\n") + "\n");
+const snap2 = join(repo, "snap2.md");
+writeFileSync(snap2, [
+  '실행: `node "scripts/missing.mjs"` 와 `node "scripts/existing.mjs"`',
+  "파일: `scripts/가짜.mjs` 와 `scripts/한글이름.mjs` 와 `scripts/한글이름.mjs를` 와 `scripts/한글이름.mjs:3`",
+  "산문: 파일을 고치고 README.md를 읽었고 수정함",
+  '공백 낀 따옴표 경로: `node "src/a b.mjs"`',
+  "",
+].join("\n"));
+r = spawnSync(process.execPath, [CHECK, snap2, "--cwd", repo], { encoding: "utf-8" });
+const out2 = r.stdout;
+expect(r.status === 1, "quoted/hangul paths that are missing → exit 1");
+expect(/^MISSING path scripts\/missing\.mjs @L1/m.test(out2), "quoted script argument that does not exist → MISSING (D2)");
+expect(/^OK path scripts\/existing\.mjs @L1/m.test(out2), "quoted script argument that exists → OK (D2)");
+expect(/^MISSING path scripts\/가짜\.mjs @L2/m.test(out2), "hangul path that does not exist → MISSING (D3)");
+expect(/^OK path scripts\/한글이름\.mjs @L2/m.test(out2), "hangul path that exists → OK (D3)");
+expect(/^OK file:line scripts\/한글이름\.mjs:3 @L2/m.test(out2), "hangul file:line in range → OK (D3)");
+expect(!/한글이름\.mjs를/.test(out2), "josa after the extension is stripped before the path check (D3)");
+expect(!/파일을/.test(out2) && !/수정함/.test(out2), "hangul prose without an extension stays excluded (D3)");
+expect(/^OK path README\.md @L3/m.test(out2), "hangul josa on an existing root file → OK (D3)");
+// 알려진 한계: 따옴표 안 공백은 파싱하지 않는다 — 공백에서 잘린 뒷조각이 경로로 검사된다. 현 동작 고정.
+expect(/^MISSING path b\.mjs @L4/m.test(out2), "quoted path with a space is split at the space (known limitation, pinned)");
+
 rmSync(repo, { recursive: true, force: true });
 rmSync(plain, { recursive: true, force: true });
 console.log(failures ? `handoff-check-test: ${failures} FAILED` : "handoff-check-test: all passed");

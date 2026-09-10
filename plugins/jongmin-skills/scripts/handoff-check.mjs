@@ -18,6 +18,10 @@ const SCRIPT_EXT = /\.(mjs|cjs|js|py|sh|ps1)$/i;
 const FILE_EXT = /\.(md|mjs|cjs|js|ts|json|txt|py|toml|ya?ml|sh|ps1|sql|csv|html|css)$/i;
 const MIN_SHA = 7;
 const MAX_SHA = 40;
+// 확장자 뒤에 붙은 한글 조사(`README.md를`, `scripts/가짜.mjs를`) — 경로 판정 전에 떼어낸다
+const EXT_JOSA = /(\.[A-Za-z0-9]{1,8})[가-힣]+$/;
+const NON_ASCII = /[^\x00-\x7F]/;
+const LINE_REF = /:\d+(?:-\d+)?$/;
 
 const argv = process.argv.slice(2);
 const flag = (n) => argv.includes(n);
@@ -57,6 +61,7 @@ function expandPath(p) {
 function lineCount(file) {
   return readFileSync(file, "utf-8").split(/\r?\n/).length;
 }
+const stripQuotes = (w) => w.replace(/^["']+|["']+$/g, "");
 
 // 후보 추출 — 줄 단위, 종류별. 자리표시자(<...>)·URL·글롭·옵션은 건너뛴다
 const results = [];
@@ -103,8 +108,9 @@ lines.forEach((raw, idx) => {
       const head = words[0];
       if (KNOWN_BINS.has(head)) {
         push("cmd", head, lineNo, binExists(head) ? "OK" : "MISSING");
-        const script = words.slice(1).find((w) => SCRIPT_EXT.test(w) && !/[<>*]/.test(w));
-        if (script) checkPath(script.replace(/^["']|["']$/g, ""), lineNo);
+        // 따옴표를 먼저 벗겨야 `node "scripts/x.mjs"`의 닫는 따옴표가 SCRIPT_EXT의 $ 앵커를 막지 않는다
+        const script = words.slice(1).map(stripQuotes).find((w) => SCRIPT_EXT.test(w) && !/[<>*]/.test(w));
+        if (script) checkPath(script, lineNo);
         continue;
       }
       for (const w of words) checkPathToken(w, lineNo);
@@ -117,8 +123,11 @@ lines.forEach((raw, idx) => {
 function checkPathToken(tok, lineNo) {
   let t = tok.replace(/^[("'\[<]+|[)"'\],;:>]+$/g, "");
   if (!t || /^--?[a-z]/i.test(t) || /:\/\//.test(t) || /[<>*{}$|]/.test(t)) return;
-  // 오탐 제외(실전 표본 2026-09-10): 한글 조사가 붙은 토큰 / 스킴 없는 호스트명 / 슬래시 명령
-  if (/[^\x00-\x7F]/.test(t)) return;
+  // 한글이 든 토큰은 조사를 뗀 뒤 확장자가 남을 때만 경로로 본다 — `scripts/가짜.mjs`는 검사하고
+  // 실전 표본 2026-09-10의 산문(`파일을`, `account/rateLimits/read와`, `5h/주간/ctx는`)은 계속 제외한다
+  t = t.replace(EXT_JOSA, "$1");
+  if (NON_ASCII.test(t) && !FILE_EXT.test(t.replace(LINE_REF, ""))) return;
+  // 오탐 제외(실전 표본 2026-09-10): 스킴 없는 호스트명 / 슬래시 명령
   if (/^[\w.-]+\.(com|net|org|io|dev|ai|kr|co)(\/|$)/i.test(t)) return;
   if (/^\/[a-z][\w-]*(:[\w-]+)*$/i.test(t)) return;
   if (/^[A-Z0-9_]+(\/[A-Z0-9_]+)+$/.test(t)) return; // 대문자 열거 VERIFIED/UNVERIFIED (실전 표본)
