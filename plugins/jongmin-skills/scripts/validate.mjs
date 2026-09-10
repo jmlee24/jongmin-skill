@@ -70,6 +70,11 @@ function check1(root) {
     fail(1, `claude plugin validate spawn failed: ${r.error?.message ?? "unknown"}`);
     return;
   }
+  // 비영 종료도 실패 — warning 정규식만 보면 "ERROR …" + exit 1이 PASS로 둔갑한다 (cx-release 2026-09-10)
+  if (r.status !== 0) {
+    fail(1, `claude plugin validate exited ${r.status}`);
+    return;
+  }
   const out = (r.stdout || "") + (r.stderr || "");
   if (/warning|⚠/i.test(out)) fail(1, "plugin validate emitted warnings (exit code is not trusted)");
   else pass(1, "plugin validate: no warnings");
@@ -140,6 +145,14 @@ function check4(root) {
     if (!d.includes(NON_INVOCATION_PHRASE)) fail("4B", `${skill}: missing non-invocation clause`);
     else pass("4B", `${skill}: non-invocation clause present`);
   }
+  // 4-C 슬래시 전용 계약 — 플래그 실값 + description의 슬래시 절 (description만 맞고 플래그가 빠지면 자연어 발동이 되살아난다)
+  for (const skill of LINT_SKILLS) {
+    const fm = readMd(path.join(root, "plugins", "jongmin-skills", "skills", skill, "SKILL.md")).split("\n---")[0];
+    const flag = /^disable-model-invocation:\s*true\s*$/m.test(fm);
+    const clause = (descriptionOf(root, skill) ?? "").includes(`슬래시 명령(/jongmin-skills:${skill})`);
+    if (flag && clause) pass("4C", `${skill}: slash-only flag + clause`);
+    else fail("4C", `${skill}: slash-only contract broken (flag=${flag}, clause=${clause})`);
+  }
   // 4-B(c) 트리거 부분문자열 중첩 — 7종 전체 교차 (도입 시점 실패는 실재 결함: 완화 금지)
   const map = new Map(ALL_SKILLS.map((s) => [s, extractTriggers(descriptionOf(root, s))]));
   let overlaps = 0;
@@ -179,13 +192,39 @@ function check5(root) {
   if (!hits) pass(5, "term consistency: no forbidden variants");
 }
 
+// 7) 런타임 로드 Markdown 예산 — 총행 보고 + 스킬별 500행 미만 (doc-hygiene 예산 규약의 집행점)
+const SKILL_LINE_CAP = 500;
+function check7(root) {
+  const base = path.join(root, "plugins", "jongmin-skills");
+  const groups = { skills: [], shared: [], agents: [] };
+  for (const s of fs.readdirSync(path.join(base, "skills"))) {
+    const p = path.join(base, "skills", s, "SKILL.md");
+    if (fs.existsSync(p)) groups.skills.push(p);
+  }
+  for (const g of ["shared", "agents"]) {
+    for (const f of fs.readdirSync(path.join(base, g))) if (f.endsWith(".md")) groups[g].push(path.join(base, g, f));
+  }
+  const count = (p) => readMd(p).split("\n").length - 1;
+  let total = 0, over = 0;
+  for (const [g, files] of Object.entries(groups)) {
+    const n = files.reduce((a, p) => a + count(p), 0);
+    total += n;
+    if (g === "skills") for (const p of files) {
+      const c = count(p);
+      if (c >= SKILL_LINE_CAP) { over++; fail(7, `${path.relative(root, p)}: ${c} lines >= ${SKILL_LINE_CAP}`); }
+    }
+    console.log(`INFO [7] ${g}: ${n} lines`);
+  }
+  if (!over) pass(7, `runtime markdown total ${total} lines; every SKILL.md < ${SKILL_LINE_CAP}`);
+}
+
 function main() {
   const args = Object.fromEntries(process.argv.slice(2).map((a) => {
     const m = a.match(/^--([a-z]+)=(.*)$/);
     return m ? [m[1], m[2]] : [a, true];
   }));
   const root = args.root ? path.resolve(String(args.root)) : DEFAULT_ROOT;
-  const VALID_CHECKS = [1, 2, 3, 4, 5, 6];
+  const VALID_CHECKS = [1, 2, 3, 4, 5, 6, 7];
   const only = args.only !== undefined ? String(args.only).split(",").map(Number) : VALID_CHECKS;
   // 무효한 --only는 빈 검사 집합 = 공허 ALL PASS가 된다 — 즉시 거부 (cx-s6)
   if (!only.length || only.some((n) => !VALID_CHECKS.includes(n))) {
@@ -197,6 +236,7 @@ function main() {
   if (only.includes(3)) check3(root);
   if (only.includes(4)) check4(root);
   if (only.includes(5)) check5(root);
+  if (only.includes(7)) check7(root);
   if (only.includes(6)) failures += lintCases(root).failures; // cases/ 스키마 — 상세는 case-lint.mjs
   console.log(failures ? `\nRESULT: FAIL (${failures})` : "\nRESULT: ALL PASS");
   process.exit(failures ? 1 : 0);

@@ -8,8 +8,7 @@ model: opus
 너는 dev-conductor 편성의 독립 리뷰 레인이다. 구현자와 분리된 컨텍스트에서,
 지정받은 커밋 범위만을 리뷰한다.
 
-(frontmatter의 `model: opus`는 패밀리 티어 규약의 T2 바인딩 구현 지점이다 — 에이전트 정의는
-별칭을 직접 쓸 수밖에 없는 유일한 위치. 세대 교체 시 shared/model-tiers.md와 함께 이 줄을 갱신한다.)
+(`model: opus` = T2 바인딩 구현 지점 — 세대 교체 시 shared/model-tiers.md와 함께 갱신.)
 
 ## 규칙
 

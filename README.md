@@ -214,7 +214,14 @@ node plugins/jongmin-skills/scripts/validate.mjs
   source_verdict), landing-check 「선택 외부 리뷰 — /code-review ultra」(권고만·사용자 실행분만 큐 등록), conductor §6 외부
   리뷰 재확인 경로, 쓰기 레인 격리 Agent `isolation: "worktree"` 기본, codex-lane 생존 판정 알림 우선. 기각: quick/deep
   개명, ultra 자동화, 네이티브 CONFIRMED 승격.
-- **HUD**: codex 사용량 세그먼트(ChatGPT 사용량 백엔드, auth.json 토큰), 모델 옆 effort 레벨. hud-test 37건.
+- **HUD**: 2줄 레이아웃 — [1] 클로드 모델·effort·5h·주간·모델별 버킷·ctx [2] codex 모델·effort(config.toml)·사용량.
+  codex 5h 창은 계정 응답(`account/rateLimits/read`와 동일 출처)에 있을 때만 표시 — prolite는 주간만 옴(2026-09-10 실측). hud-test 41건.
+- **릴리스 게이트 CX 접합**(gpt-6-astra, 맹검 리뷰 5건 + 6원칙 감사): 수용 — worktree isolation은 단일 레인 한정(검증기가
+  경로 대조 불가), conductor 인계는 handoff 절차를 T1이 직접 수행(슬래시 전용이라 Skill 호출 불가), forge eval을 경계
+  테스트로 재정의, validate ④-C(플래그 실값)·①(비영 종료)·⑦(런타임 행수·500행 상한) 신설, coproduce 집필을 T2로(T1은
+  판정·재확인), deep-audit CX 준비 파일은 scratchpad 한정 허용, ledger↔doc-hygiene 순환 참조 해소, 이력·중복 28행 삭제.
+  기각 — model-tiers 승격 밸브 폐지(장부 기록 예외로 유지), conductor 검증 스크립트 예외 폐지(판정 도구), 문서 관리 T1 수행
+  폐지(판정 비중). 보류 — PreToolUse 발진 차단(케이스 09-08 pending)·Monitor CX 감시·Workflow deep-audit 팬아웃.
 
 ### v1.11.0 (2026-09-10) — hud-setup: OMC HUD 대체 설치 부속
 
@@ -403,9 +410,9 @@ save 게이트의 분기 기준을 "소비자가 사람/기계냐"에서 **전�
 수동으로 하려면:
 
 1. `plugins/jongmin-skills/skills/<스킬이름>/SKILL.md` 생성
-   - frontmatter `name`(소문자·숫자·하이픈) + `description`(**무엇+언제**, 제3인칭 — 하는 일
-     한 줄 + 트리거 어휘 + 부정 조건. 워크플로 상세 요약 금지, "언급하면" 금지·"요청하면"으로.
-     발동 조건이 길면 `when_to_use` 필드로 분리, 합산 1,536자 한도)
+   - frontmatter `name`(소문자·숫자·하이픈) + `disable-model-invocation: true`(패밀리 기본) +
+     `description`(**무엇+언제**, 제3인칭 — 하는 일 한 줄 + "슬래시 명령(/jongmin-skills:<name>)으로만 시작" 절 +
+     부정 조건. 트리거 어휘 없음, 워크플로 상세 요약 금지, 합산 1,536자 한도) + `argument-hint`
    - 본문 500줄 이하, 참조는 SKILL.md에서 **1단계 깊이만**(보조 파일의 재참조 금지 —
      shared 정본 간 위임 참조는 허용, 순환 금지), 경로는
      포워드슬래시, 모델은 티어명(T1/T2/CX)으로만, shared/ 부품은 참조(복붙 금지)

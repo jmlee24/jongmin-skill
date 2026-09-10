@@ -7,8 +7,6 @@ argument-hint: "<작업 또는 warplan 편성표>"
 
 # jongmin-dev-conductor — 다중 레인 개발 편성
 
-이 스킬은 **슬래시 명령으로만 시작한다** — 자연어로는 발동하지 않는다 (패밀리 공통, 2026-09-10).
-
 정체성: **병렬 접합기**. 지휘부(메인 세션)는 구현 코드를 직접 쓰지 않고 **스코프 확정·레인
 배선·직접 검증·리뷰 접합**만 한다. 핵심 성능은 **검증·명세·리뷰·쓰기를 최대한 겹치면서도
 착지·판정을 T1 하나로 직렬화하는 능력**이다. 병렬성은 읽기 레인과 파일군이 분리된 쓰기
@@ -62,7 +60,7 @@ argument-hint: "<작업 또는 warplan 편성표>"
 | 레인 | 바인딩 | 역할 | 제약 |
 |---|---|---|---|
 | 지휘 (T1) | 메인 세션 | 근거 수집, DAG 편성, 프롬프트 작성, 착지·판정, 리뷰 접합, 불일치 실측 판정, 최종 보고 | 구현 코드 직접 작성 금지 (검증 스크립트는 예외) |
-| 쓰기 (T2) | Agent(`general-purpose`) + [executor-prompt.md](../../shared/executor-prompt.md) | 구현 + 테스트 + 레인 브랜치 커밋 | 파일군 분리 태스크만 worktree 병렬 — 같은 파일군 병렬 금지(불변), 발진 게이트: 미착지 완료 레인 0. 격리는 Agent `isolation: "worktree"`(생성·미변경 시 자동 정리)를 기본으로 — toolchain·fixture bootstrap은 여전히 편성 몫 |
+| 쓰기 (T2) | Agent(`general-purpose`) + [executor-prompt.md](../../shared/executor-prompt.md) | 구현 + 테스트 + 레인 브랜치 커밋 | 파일군 분리 태스크만 worktree 병렬 — 같은 파일군 병렬 금지(불변), 발진 게이트: 미착지 완료 레인 0. 격리 기본은 매니페스트 `worktree` 경로를 발진 검증기가 대조한 수동 worktree. Agent `isolation: "worktree"`(자동 생성·미변경 시 정리)는 검증기가 경로를 대조할 수 없으므로 **parallel-write가 아닌 단일 레인**에만 — bootstrap은 여전히 편성 몫 |
 | 읽기 (CX) | `codex exec` read-only — 실행 패턴은 [codex-lane.md](../../shared/codex-lane.md) | 다음 작업 명세 생성, 대안 제시, 반박 지향 교차검증 | 쓰기와 파일 충돌 없음 → 상시 병렬 가능. **소견은 자문** — 자동 반영 금지 |
 | 리뷰 (T2) | `lane-reviewer` 에이전트 (없으면 `general-purpose`에 read-only 지시) | 착지된 커밋 범위 독립 리뷰 — 착지물 리뷰의 주도자 | 자기승인 금지 — 지휘부·쓰기 레인이 리뷰를 대신하지 않는다 |
 
@@ -215,8 +213,8 @@ touched `.md` 인벤토리·참조 후보를 수집하고 [doc-hygiene.md](../..
   보존 여부를 판정한 뒤 기록된 worktree만 `git worktree remove "<경로>"`(비강제)로 제거하고 상태를
   보고한다. `pkill -f`·`killall`·명령/경로 패턴 일괄 종료는 쓰지 않는다 (실측: `pkill -f "codex"`가
   그 명령을 실행한 셸 자신을 죽임 2회 — 규칙이 산문에 있어도 걸렸다)
-- **컴팩션 임박·세션 경계**(계정 전환, 기기 이동): `handoff` 스킬로 스냅샷을 뜬 뒤 중단한다 —
-  재개는 handoff restore가 담당
+- **컴팩션 임박·세션 경계**(계정 전환, 기기 이동): handoff는 슬래시 전용이라 Skill 호출이 불가하다 —
+  T1이 [handoff/SKILL.md](../handoff/SKILL.md)의 save 절차를 직접 수행해 스냅샷 응답을 낸 뒤 중단한다. 재개는 사용자의 `/jongmin-skills:handoff restore`
 
 ## 성공 기준
 
