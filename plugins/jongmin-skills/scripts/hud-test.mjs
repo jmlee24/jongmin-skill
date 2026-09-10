@@ -49,15 +49,15 @@ expect(/Fable 5\.1\x1b\[0m \x1b\[2mhigh/.test(r.stdout), "renderer shows effort 
 expect(/5h.*21%.*\(3h1m\)/.test(r.stdout), "renderer shows 5h gauge with reset countdown");
 expect(/wk\x1b\[0m \[.*46%.*\(1d6h\)/.test(r.stdout), "renderer shows weekly gauge with day countdown");
 expect(/ctx.*9%/.test(r.stdout), "renderer shows ctx gauge");
-expect(r.stdout.trim().split("\n").length === 2, "renderer prints two lines (claude / codex+ctx)");
-expect(/^.*Fable 5\.1.*5h.*wk.*\n.*ctx/.test(r.stdout), "renderer puts model+claude on line 1 and ctx on line 2");
+expect(r.stdout.trim().split("\n").length === 1, "renderer prints one line when no codex data");
+expect(/^.*Fable 5\.1.*5h.*wk.*ctx.*9%/.test(r.stdout.split("\n")[0]), "renderer puts model, claude gauges and ctx on line 1");
 
 r = run(RENDERER, [], "");
 expect(r.status === 0 && r.stdout.length > 0, "renderer exits 0 with output on empty stdin");
 r = run(RENDERER, [], "{not json");
 expect(r.status === 0 && r.stdout.length > 0, "renderer exits 0 with output on invalid JSON");
 r = run(RENDERER, [], JSON.stringify({ model: { display_name: "X" }, context_window: { used_percentage: 91 } }));
-expect(r.status === 0 && /^\x1b\[36mX\x1b\[0m\n/.test(r.stdout) && /ctx.*91%/.test(r.stdout) && !/5h/.test(r.stdout), "renderer omits rate gauges and effort when absent");
+expect(r.status === 0 && /^\x1b\[36mX\x1b\[0m\x1b\[2m \| \x1b\[0m\x1b\[2mctx/.test(r.stdout) && /ctx.*91%/.test(r.stdout) && !/5h/.test(r.stdout), "renderer omits rate gauges and effort when absent");
 
 // API 차단 상태에서도 캐시된 모델 버킷은 표시한다 (실패 시 마지막 성공 캐시 유지 계약)
 mkdirSync(cacheDir, { recursive: true });
@@ -68,8 +68,9 @@ writeFileSync(join(cacheDir, "usage-cache.json"), JSON.stringify({
 r = run(RENDERER, [], sample);
 expect(/Fable\x1b\[0m \[.*78%.*\(1d6h\)/.test(r.stdout), "renderer shows cached model-scoped bucket");
 expect(/codex\x1b\[0m \x1b\[2mwk\x1b\[0m \[.*20%/.test(r.stdout), "renderer shows cached codex bucket under codex group");
-expect(r.stdout.indexOf("Fable\x1b[0m [") < r.stdout.indexOf("codex") && r.stdout.indexOf("codex") < r.stdout.indexOf("ctx"), "renderer orders model bucket, codex, ctx");
-expect(r.stdout.replace(/\x1b\[[0-9;]*m/g, "").split("\n").every((l) => l.length < 100), "renderer keeps every line under 100 visible chars");
+expect(r.stdout.indexOf("Fable\x1b[0m [") < r.stdout.indexOf("ctx") && r.stdout.indexOf("ctx") < r.stdout.indexOf("\n") && r.stdout.indexOf("\n") < r.stdout.indexOf("codex"), "renderer orders model bucket, ctx on line 1, codex on line 2");
+expect(r.stdout.trim().split("\n").length === 2, "renderer prints two lines when codex data is cached");
+expect(r.stdout.replace(/\x1b\[[0-9;]*m/g, "").split("\n").every((l) => l.length < 120), "renderer keeps every line under 120 visible chars");
 // codex 5h 창이 있으면 5h(카운트다운) → wk 순, config.toml의 모델·effort가 그룹 머리에 온다
 mkdirSync(codexHome, { recursive: true });
 writeFileSync(join(codexHome, "config.toml"), 'model = "gpt-6-astra"\nmodel_reasoning_effort = "high"\n');
@@ -95,7 +96,7 @@ expect(r.status === 0 && !/codex/.test(r.stdout), "renderer omits codex when aut
 
 // 모델명·라벨의 개행은 한 줄 계약을 깨지 않는다 (CX#5)
 r = run(RENDERER, [], JSON.stringify({ model: { display_name: "A\nB" }, context_window: { used_percentage: 1 } }));
-expect(r.status === 0 && r.stdout.trim().split("\n").length === 2 && /A B/.test(r.stdout), "renderer collapses newlines in model name");
+expect(r.status === 0 && r.stdout.trim().split("\n").length === 1 && /A B/.test(r.stdout), "renderer collapses newlines in model name");
 
 // API 실패도 TTL 스탬프를 남겨 매 렌더 재시도를 막고, 이전 버킷은 유지한다 (CX#1)
 writeFileSync(join(isoDir, ".credentials.json"), JSON.stringify({ claudeAiOauth: { accessToken: "dummy" } }));

@@ -2,7 +2,7 @@
 // jongmin-skills HUD — Claude Code statusline 렌더러 (의존성 없음).
 //
 // 입력: Claude Code가 statusline 명령의 stdin으로 주는 JSON 1건.
-// 출력: 2줄 — [1] 클로드 모델 effort | 5h wk 모델별버킷  [2] codex 모델 effort 5h wk | ctx. 2줄에 내용이 없으면 1줄만.
+// 출력: 2줄 — [1] 클로드 모델 effort | 5h wk 모델별버킷 | ctx  [2] codex 모델 effort 5h wk. codex 없으면 1줄만.
 //
 // 5h·주간·ctx는 stdin의 rate_limits / context_window만으로 그린다 (네트워크 0).
 // 모델별 주간 버킷(예: Fable 77%)은 stdin에 없어서 api.anthropic.com/api/oauth/usage를
@@ -19,7 +19,7 @@ import { execFileSync } from "node:child_process";
 
 const CACHE_TTL_MS = 60_000;
 const API_TIMEOUT_MS = 3_000;
-// 한 줄이 터미널 폭을 넘으면 끝(ctx)이 잘린다 (실측 130자) — 2줄 출력: 1줄 모델·클로드, 2줄 codex·ctx
+// 한 줄이 터미널 폭을 넘으면 끝이 잘린다 (실측 130자) — 2줄 출력: 1줄 클로드+ctx, 2줄 codex
 const BAR_WIDTH = 8;
 const WARN_PCT = 50;
 const DANGER_PCT = 80;
@@ -304,7 +304,7 @@ async function main() {
   for (const b of usage.anthropic?.scoped ?? []) claude.push(gauge(b.label, b.percent, b.resetsAt, nowMs, WARN_PCT, DANGER_PCT));
   if (claude.length) line1.push(claude.join(" "));
 
-  // [2] codex: 5h → wk 순 (Spark 등 additional_rate_limits는 파서에서 제외) · ctx
+  // [2] codex: 5h → wk 순 (Spark 등 additional_rate_limits는 파서에서 제외). ctx는 1줄 끝
   const codex = (usage.codex?.buckets ?? [])
     .slice()
     .sort((a, b) => (a.label.endsWith("5h") ? 0 : 1) - (b.label.endsWith("5h") ? 0 : 1))
@@ -318,7 +318,7 @@ async function main() {
   }
 
   const ctxPct = clampPct(stdin.context_window?.used_percentage);
-  if (ctxPct != null) line2.push(gauge("ctx", ctxPct, null, nowMs, CTX_WARN_PCT, CTX_DANGER_PCT));
+  if (ctxPct != null) line1.push(gauge("ctx", ctxPct, null, nowMs, CTX_WARN_PCT, CTX_DANGER_PCT));
 
   const sep = `${ANSI.dim} | ${ANSI.reset}`;
   const lines = [line1, line2].filter((l) => l.length).map((l) => l.join(sep));
