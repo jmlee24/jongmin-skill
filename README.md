@@ -162,7 +162,7 @@ T1 통합(핵심 수치·인용은 원자료 재확인) → CX 통합본 검수 
 **수행**: `scripts/hud-setup.mjs`를 실행해 `<configDir>/hud/jongmin-hud.mjs` 래퍼를 심고 `settings.json`의
 `statusLine`을 등록한다(기존 값은 백업 후 교체, 보고에 명시). 래퍼는 매 실행마다 플러그인 캐시의 **최신
 버전** 렌더러(`scripts/usage-hud.mjs`, 의존성 0)를 찾으므로 autoUpdate 뒤에도 경로가 깨지지 않는다.
-표시: 모델 effort(high·low 등) | 5h | 주간 | 모델별 주간 버킷 | codex 사용량 | ctx. 5h·주간·ctx는 클코 statusline stdin만 사용(네트워크 0),
+표시(2줄): [1] 클로드 모델 effort | 5h · 주간 · 모델별 주간 버킷  [2] codex 모델 effort(config.toml) 5h · 주간(Spark 등 부가 한도 제외) | ctx. 5h 창은 계정 응답에 있을 때만(prolite는 주간만 옴, 2026-09-10 실측). 5h·주간·ctx는 클코 statusline stdin만 사용(네트워크 0),
 모델별 버킷만 `/api/oauth/usage`를 60초당 1회 호출(실패 시 마지막 성공값 유지).
 
 **쓸 때**: 플러그인 설치 직후 머신당 1회. `check`(상태 확인), `uninstall`(제거)도 같은 명령.

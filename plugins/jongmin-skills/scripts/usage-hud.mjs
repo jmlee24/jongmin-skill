@@ -2,7 +2,7 @@
 // jongmin-skills HUD — Claude Code statusline 렌더러 (의존성 없음).
 //
 // 입력: Claude Code가 statusline 명령의 stdin으로 주는 JSON 1건.
-// 출력: 한 줄 — 모델 effort | 5h | 주간 | 모델별 주간 버킷 | codex 사용량 | ctx.
+// 출력: 2줄 — [1] 클로드 모델 effort | 5h wk 모델별버킷  [2] codex 모델 effort 5h wk | ctx. 2줄에 내용이 없으면 1줄만.
 //
 // 5h·주간·ctx는 stdin의 rate_limits / context_window만으로 그린다 (네트워크 0).
 // 모델별 주간 버킷(예: Fable 77%)은 stdin에 없어서 api.anthropic.com/api/oauth/usage를
@@ -19,6 +19,7 @@ import { execFileSync } from "node:child_process";
 
 const CACHE_TTL_MS = 60_000;
 const API_TIMEOUT_MS = 3_000;
+// 한 줄이 터미널 폭을 넘으면 끝(ctx)이 잘린다 (실측 130자) — 2줄 출력: 1줄 모델·클로드, 2줄 codex·ctx
 const BAR_WIDTH = 8;
 const WARN_PCT = 50;
 const DANGER_PCT = 80;
@@ -192,6 +193,18 @@ async function fetchUsage(clientVersion) {
   return res.json();
 }
 
+// 클코에서 codex exec를 부를 때 쓰는 모델 = config.toml 기본값 (codex-lane.md: -m 지정 금지). 네트워크 없음
+function readCodexModel() {
+  try {
+    const toml = readFileSync(join(CODEX_HOME, "config.toml"), "utf-8");
+    const model = toml.match(/^\s*model\s*=\s*"([^"]+)"/m)?.[1] ?? "";
+    const effort = toml.match(/^\s*model_reasoning_effort\s*=\s*"([^"]+)"/m)?.[1] ?? "";
+    return { model: oneLine(model), effort: oneLine(effort) };
+  } catch {
+    return { model: "", effort: "" };
+  }
+}
+
 function readCodexAuth() {
   try {
     const parsed = JSON.parse(readFileSync(join(CODEX_HOME, "auth.json"), "utf-8"));
@@ -268,33 +281,49 @@ async function loadUsage(clientVersion, nowMs) {
 async function main() {
   const stdin = readStdinJson();
   const nowMs = Date.now();
-  const segments = [];
+  const line1 = [];
+  const line2 = [];
 
   const modelName = stdin.model?.display_name || stdin.model?.id;
   // effort.level(low/medium/high 등)은 stdin에 그대로 온다 — 모델명 옆에 회색으로
   const effort = typeof stdin.effort?.level === "string" ? oneLine(stdin.effort.level) : "";
   if (modelName) {
-    segments.push(`${ANSI.cyan}${oneLine(modelName)}${ANSI.reset}${effort ? ` ${ANSI.dim}${effort}${ANSI.reset}` : ""}`);
+    line1.push(`${ANSI.cyan}${oneLine(modelName)}${ANSI.reset}${effort ? ` ${ANSI.dim}${effort}${ANSI.reset}` : ""}`);
   }
 
   const usage = await loadUsage(stdin.version || DEFAULT_CLIENT_VERSION, nowMs);
   const fiveHour = stdin.rate_limits?.five_hour ?? usage.anthropic?.global?.five_hour;
   const sevenDay = stdin.rate_limits?.seven_day ?? usage.anthropic?.global?.seven_day;
 
+  // [1] 클로드: 5h · wk · 모델별 주간 버킷
+  const claude = [];
   const fhPct = clampPct(fiveHour?.used_percentage);
-  if (fhPct != null) segments.push(gauge("5h", fhPct, fiveHour.resets_at, nowMs, WARN_PCT, DANGER_PCT));
+  if (fhPct != null) claude.push(gauge("5h", fhPct, fiveHour.resets_at, nowMs, WARN_PCT, DANGER_PCT));
   const sdPct = clampPct(sevenDay?.used_percentage);
-  if (sdPct != null) segments.push(gauge("wk", sdPct, sevenDay.resets_at, nowMs, WARN_PCT, DANGER_PCT));
+  if (sdPct != null) claude.push(gauge("wk", sdPct, sevenDay.resets_at, nowMs, WARN_PCT, DANGER_PCT));
+  for (const b of usage.anthropic?.scoped ?? []) claude.push(gauge(b.label, b.percent, b.resetsAt, nowMs, WARN_PCT, DANGER_PCT));
+  if (claude.length) line1.push(claude.join(" "));
 
-  for (const b of [...(usage.anthropic?.scoped ?? []), ...(usage.codex?.buckets ?? [])]) {
-    segments.push(gauge(b.label, b.percent, b.resetsAt, nowMs, WARN_PCT, DANGER_PCT));
+  // [2] codex: 5h → wk 순 (Spark 등 additional_rate_limits는 파서에서 제외) · ctx
+  const codex = (usage.codex?.buckets ?? [])
+    .slice()
+    .sort((a, b) => (a.label.endsWith("5h") ? 0 : 1) - (b.label.endsWith("5h") ? 0 : 1))
+    .map((b) => gauge(b.label.replace(/^codex /, ""), b.percent, b.resetsAt, nowMs, WARN_PCT, DANGER_PCT));
+  if (codex.length) {
+    const cm = readCodexModel();
+    const head = cm.model
+      ? `${ANSI.cyan}${cm.model}${ANSI.reset}${cm.effort ? ` ${ANSI.dim}${cm.effort}${ANSI.reset}` : ""}`
+      : `${ANSI.dim}codex${ANSI.reset}`;
+    line2.push(`${head} ${codex.join(" ")}`);
   }
 
   const ctxPct = clampPct(stdin.context_window?.used_percentage);
-  if (ctxPct != null) segments.push(gauge("ctx", ctxPct, null, nowMs, CTX_WARN_PCT, CTX_DANGER_PCT));
+  if (ctxPct != null) line2.push(gauge("ctx", ctxPct, null, nowMs, CTX_WARN_PCT, CTX_DANGER_PCT));
 
-  if (segments.length === 0) segments.push(`${ANSI.dim}jongmin-hud: no data${ANSI.reset}`);
-  process.stdout.write(segments.join(`${ANSI.dim} | ${ANSI.reset}`) + "\n");
+  const sep = `${ANSI.dim} | ${ANSI.reset}`;
+  const lines = [line1, line2].filter((l) => l.length).map((l) => l.join(sep));
+  if (lines.length === 0) lines.push(`${ANSI.dim}jongmin-hud: no data${ANSI.reset}`);
+  process.stdout.write(lines.join("\n") + "\n");
 }
 
 try {
