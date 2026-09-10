@@ -34,6 +34,7 @@ const nowSec = Math.floor(Date.now() / 1000);
 const sample = JSON.stringify({
   version: "2.1.0",
   model: { display_name: "Fable 5.1" },
+  effort: { level: "high" },
   context_window: { used_percentage: 9 },
   rate_limits: {
     five_hour: { used_percentage: 21, resets_at: nowSec + 3 * 3600 + 90 },
@@ -43,6 +44,7 @@ const sample = JSON.stringify({
 let r = run(RENDERER, [], sample);
 expect(r.status === 0, "renderer exits 0 on normal stdin");
 expect(/Fable 5\.1/.test(r.stdout), "renderer shows model name");
+expect(/Fable 5\.1\[0m \[2mhigh/.test(r.stdout), "renderer shows effort level next to model");
 expect(/5h.*21%.*\(3h1m\)/.test(r.stdout), "renderer shows 5h gauge with reset countdown");
 expect(/wk.*46%.*\(1d6h\)/.test(r.stdout), "renderer shows weekly gauge with day countdown");
 expect(/ctx.*9%/.test(r.stdout), "renderer shows ctx gauge");
@@ -53,7 +55,7 @@ expect(r.status === 0 && r.stdout.length > 0, "renderer exits 0 with output on e
 r = run(RENDERER, [], "{not json");
 expect(r.status === 0 && r.stdout.length > 0, "renderer exits 0 with output on invalid JSON");
 r = run(RENDERER, [], JSON.stringify({ model: { display_name: "X" }, context_window: { used_percentage: 91 } }));
-expect(r.status === 0 && /X.*ctx.*91%/.test(r.stdout) && !/5h/.test(r.stdout), "renderer omits rate gauges when absent");
+expect(r.status === 0 && /X\[0m\[2m \| /.test(r.stdout) && /ctx.*91%/.test(r.stdout) && !/5h/.test(r.stdout), "renderer omits rate gauges and effort when absent");
 
 // API 차단 상태에서도 캐시된 모델 버킷은 표시한다 (실패 시 마지막 성공 캐시 유지 계약)
 mkdirSync(cacheDir, { recursive: true });

@@ -2,7 +2,7 @@
 // jongmin-skills HUD — Claude Code statusline 렌더러 (의존성 없음).
 //
 // 입력: Claude Code가 statusline 명령의 stdin으로 주는 JSON 1건.
-// 출력: 한 줄 — 모델 | 5h 게이지 | 주간 게이지 | 모델별 주간 버킷 | ctx 게이지.
+// 출력: 한 줄 — 모델 effort | 5h 게이지 | 주간 게이지 | 모델별 주간 버킷 | ctx 게이지.
 //
 // 5h·주간·ctx는 stdin의 rate_limits / context_window만으로 그린다 (네트워크 0).
 // 모델별 주간 버킷(예: Fable 77%)은 stdin에 없어서 api.anthropic.com/api/oauth/usage를
@@ -216,7 +216,11 @@ async function main() {
   const segments = [];
 
   const modelName = stdin.model?.display_name || stdin.model?.id;
-  if (modelName) segments.push(`${ANSI.cyan}${oneLine(modelName)}${ANSI.reset}`);
+  // effort.level(low/medium/high 등)은 stdin에 그대로 온다 — 모델명 옆에 회색으로
+  const effort = typeof stdin.effort?.level === "string" ? oneLine(stdin.effort.level) : "";
+  if (modelName) {
+    segments.push(`${ANSI.cyan}${oneLine(modelName)}${ANSI.reset}${effort ? ` ${ANSI.dim}${effort}${ANSI.reset}` : ""}`);
+  }
 
   const usage = await loadUsage(stdin.version || DEFAULT_CLIENT_VERSION, nowMs);
   const fiveHour = stdin.rate_limits?.five_hour ?? usage?.global?.five_hour;

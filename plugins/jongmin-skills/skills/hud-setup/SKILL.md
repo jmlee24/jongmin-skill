@@ -48,7 +48,7 @@ DONE - restart Claude Code (or open a new session) to see the HUD
 
 ## 표시 항목과 데이터 출처
 
-- `5h`, `wk`, `ctx`: 클코가 statusline stdin으로 주는 `rate_limits`·`context_window` — 네트워크 없음
+- 모델명 옆 effort 레벨과 `5h`, `wk`, `ctx`: 클코가 statusline stdin으로 주는 `effort.level`·`rate_limits`·`context_window` — 네트워크 없음
 - 모델별 주간 버킷(예: `Fable 78%`): stdin에 없어 `api.anthropic.com/api/oauth/usage`를 60초당
   최대 1회 호출 (`limits[].kind === "weekly_scoped"`). 토큰은 `<configDir>/.credentials.json`
   (macOS는 Keychain). 실패하면 마지막 성공값을 유지하고, 토큰이 없으면 항목을 생략한다
