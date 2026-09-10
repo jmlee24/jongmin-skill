@@ -1,10 +1,14 @@
 ---
 name: jongmin-deep-audit
-description: 코드베이스 전반의 구조적 문제를 전면 감사할 때 사용한다 ("deep audit", "전면 감사", "구조 전체 의심", "아키텍처 점검"). 특정 버그 하나의 원인 추적, 단일 파일 리뷰, 수정 작업에는 사용하지 않는다 — 이 스킬은 read-only다.
+description: 코드베이스 전반의 구조적 문제를 전면 감사할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-deep-audit)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 특정 버그 하나의 원인 추적, 단일 파일 리뷰, 수정 작업에는 사용하지 않는다 — 이 스킬은 read-only다.
+disable-model-invocation: true
 disallowed-tools: Edit, Write, NotebookEdit
+argument-hint: "[감사 범위·의심 축]"
 ---
 
 # jongmin-deep-audit — 이중 모델 전면 구조 감사
+
+이 스킬은 **슬래시 명령으로만 시작한다** — 자연어로는 발동하지 않는다 (패밀리 공통, 2026-09-10).
 
 정체성: **의심 카탈로그 → 항목별 이중 판정 → 반증 방법이 붙은 판정문**. read-only 고정 —
 frontmatter로 편집 도구를 차단한다. 수정은 감사 결과를 입력으로 conductor 웨이브가 담당한다.

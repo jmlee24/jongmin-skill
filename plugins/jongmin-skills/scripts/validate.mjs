@@ -22,14 +22,19 @@ const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, "..", "..", "..");
 // 이 테이블은 validate.mjs 상수와 SKILL.md의 내부 일관성만 보증한다 — PRD 확정 문자열과의
 // 대조는 루프 종료 게이트(§5-6)가 수행한다.
 export const EXPECTED_DESCRIPTIONS = {
+  "handoff": "세션 경계에서 작업 상태를 인수인계할 때 사용한다 — 슬래시 명령(/jongmin-skills:handoff)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 컨텍스트 압축 임박·계정 전환(개인/법인)·기기 이동·웨이브 중단 시 save, 재개 시 restore. 단순 작업 요약 요청에는 사용하지 않는다.",
+  "jongmin-deep-audit": "코드베이스 전반의 구조적 문제를 전면 감사할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-deep-audit)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 특정 버그 하나의 원인 추적, 단일 파일 리뷰, 수정 작업에는 사용하지 않는다 — 이 스킬은 read-only다.",
+  "jongmin-warplan": "다단계 작업의 실행 계획을 세울 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-warplan)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 단일 단계 작업, 이미 계획이 확정된 작업에는 사용하지 않는다.",
+  "skill-forge": "jongmin-skills 패밀리의 스킬을 제작·평가·개선할 때 사용한다 — 슬래시 명령(/jongmin-skills:skill-forge)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 스킬이 아닌 일반 코드·문서 작업에는 사용하지 않는다.",
   "jongmin-loop": "완료 조건이 명확한 작업을 오라클 통과까지 반복 실행할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-loop)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 완료 조건을 오라클(테스트·검증 명령)로 표현할 수 없는 작업, 탐색·리서치성 작업에는 사용하지 않는다.",
   "jongmin-sortie": "사용자가 자리를 비운 동안 시간 박스 안에서 자율 실행할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-sortie)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 사용자가 실시간으로 지켜보는 일반 작업에는 사용하지 않는다.",
+  "jongmin-dev-conductor": "커밋 3건 이상이 예상되는 다중 파일 구현 웨이브, 등가성 검증이 결과의 핵심인 무손실 최적화·리팩토링, 독립 교차검증과 리뷰 분리가 필요한 고위험 변경에 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-dev-conductor)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 단일 파일 수정, 소규모 작업, 일상적인 멀티파일 리팩토링에는 사용하지 않는다.",
   "hud-setup": "Claude Code 상태줄(statusline)에 5h·주간·모델별 사용량과 컨텍스트 게이지를 표시하는 HUD를 설치·점검·제거한다 — 슬래시 명령(/jongmin-skills:hud-setup)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 개발 작업·코드 변경·사용량 분석에는 사용하지 않는다.",
-  "jongmin-dev-conductor": "커밋 3건 이상이 예상되는 다중 파일 구현 웨이브, 등가성 검증이 결과의 핵심인 무손실 최적화·리팩토링, 독립 교차검증과 리뷰 분리가 필요한 고위험 변경에 사용한다 (\"conductor\", \"레인 편성\", \"웨이브로 진행\" 요청 포함). 단일 파일 수정, 소규모 작업, 일상적인 멀티파일 리팩토링, 편성이라는 단어에 대한 질문에는 사용하지 않는다.",
+  "jongmin-coproduce": "견적·계약 검토문·제작안·의사결정 메모·사실 브리프 등 비개발 산출물을 Claude(T1)와 Codex(CX)가 공동 제작하고 서로 검수할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-coproduce)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 코드·저장소·아키텍처가 대상인 작업, 단순 질의응답, 오답 비용이 낮은 잡학·취향 질문에는 사용하지 않는다.",
 };
 
-const LINT_SKILLS = ["handoff", "jongmin-deep-audit", "jongmin-warplan", "skill-forge"];
-const ALL_SKILLS = [...LINT_SKILLS, "jongmin-loop", "jongmin-sortie", "jongmin-dev-conductor", "hud-setup"];
+const LINT_SKILLS = ["handoff", "jongmin-deep-audit", "jongmin-warplan", "skill-forge", "jongmin-loop", "jongmin-sortie", "jongmin-dev-conductor", "hud-setup", "jongmin-coproduce"];
+const ALL_SKILLS = [...LINT_SKILLS];
 const NON_INVOCATION_PHRASE = "사용하지 않는다";
 
 let failures = 0;
@@ -144,7 +149,7 @@ function check4(root) {
       if (x.includes(y) || y.includes(x)) { overlaps++; fail("4B", `trigger overlap: ${a}"${x}" ~ ${b}"${y}"`); }
     }
   }
-  if (!overlaps) pass("4B", "trigger substring overlap: none across 8 skills");
+  if (!overlaps) pass("4B", "trigger substring overlap: none across all skills");
 }
 
 // 5) 용어 정합 — 규약 정본 용어의 금지 변형어를 탐지한다 (S10).

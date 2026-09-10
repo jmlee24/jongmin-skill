@@ -1,9 +1,13 @@
 ---
 name: jongmin-warplan
-description: 다단계 작업의 실행 계획을 세울 때 사용한다 ("warplan", "계획 짜줘", "어떻게 진행할지 정리"). 단일 단계 작업, 이미 계획이 확정된 작업에는 사용하지 않는다.
+description: 다단계 작업의 실행 계획을 세울 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-warplan)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 단일 단계 작업, 이미 계획이 확정된 작업에는 사용하지 않는다.
+disable-model-invocation: true
+argument-hint: "<작업>"
 ---
 
 # jongmin-warplan — 편성표형 계획
+
+이 스킬은 **슬래시 명령으로만 시작한다** — 자연어로는 발동하지 않는다 (패밀리 공통, 2026-09-10).
 
 정체성: **결정 압축기** — 계획 = 실행 프롬프트의 묶음 + **사용자 판단이 필요한 결정의 최소 집합**.
 계획만 산출하고 실행하지 않는다 — 실행은 단계별 라우팅 대상에 위임한다. 단계 나열이 아니라,
