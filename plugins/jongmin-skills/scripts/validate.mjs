@@ -2,7 +2,7 @@
 // 릴리스 검증 묶음 — 단일 진입점 (PRD S6). 출력 ASCII.
 // 사용: node validate.mjs [--only=1,...,6] [--root=<repo root>]
 // 항목: 1) claude plugin validate (stdout warning 판정 — exit code 신뢰 금지)
-//       2) guard-test + state-test + launch-check-test
+//       2) guard-test + state-test + launch-check-test + hud-test
 //       3) 링크 무결성 (shared 상호참조 + 동일 디렉터리 + README, 디렉터리 링크 허용)
 //          한계: inline 링크만 검사 — reference-style([x][id])·anchor-only(#a)·<> 감싼 링크는
 //          미검사 (현 repo는 inline만 사용, cx-s6 defer)
@@ -24,11 +24,12 @@ const DEFAULT_ROOT = path.resolve(SCRIPT_DIR, "..", "..", "..");
 export const EXPECTED_DESCRIPTIONS = {
   "jongmin-loop": "완료 조건이 명확한 작업을 오라클 통과까지 반복 실행할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-loop)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 완료 조건을 오라클(테스트·검증 명령)로 표현할 수 없는 작업, 탐색·리서치성 작업에는 사용하지 않는다.",
   "jongmin-sortie": "사용자가 자리를 비운 동안 시간 박스 안에서 자율 실행할 때 사용한다 — 슬래시 명령(/jongmin-skills:jongmin-sortie)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 사용자가 실시간으로 지켜보는 일반 작업에는 사용하지 않는다.",
+  "hud-setup": "Claude Code 상태줄(statusline)에 5h·주간·모델별 사용량과 컨텍스트 게이지를 표시하는 HUD를 설치·점검·제거한다 — 슬래시 명령(/jongmin-skills:hud-setup)으로만 시작되며 자연어 요청으로는 발동하지 않는다 (disable-model-invocation). 개발 작업·코드 변경·사용량 분석에는 사용하지 않는다.",
   "jongmin-dev-conductor": "커밋 3건 이상이 예상되는 다중 파일 구현 웨이브, 등가성 검증이 결과의 핵심인 무손실 최적화·리팩토링, 독립 교차검증과 리뷰 분리가 필요한 고위험 변경에 사용한다 (\"conductor\", \"레인 편성\", \"웨이브로 진행\" 요청 포함). 단일 파일 수정, 소규모 작업, 일상적인 멀티파일 리팩토링, 편성이라는 단어에 대한 질문에는 사용하지 않는다.",
 };
 
 const LINT_SKILLS = ["handoff", "jongmin-deep-audit", "jongmin-warplan", "skill-forge"];
-const ALL_SKILLS = [...LINT_SKILLS, "jongmin-loop", "jongmin-sortie", "jongmin-dev-conductor"];
+const ALL_SKILLS = [...LINT_SKILLS, "jongmin-loop", "jongmin-sortie", "jongmin-dev-conductor", "hud-setup"];
 const NON_INVOCATION_PHRASE = "사용하지 않는다";
 
 let failures = 0;
@@ -70,7 +71,7 @@ function check1(root) {
 }
 
 function check2(root) {
-  for (const t of ["guard-test.mjs", "state-test.mjs", "launch-check-test.mjs"]) {
+  for (const t of ["guard-test.mjs", "state-test.mjs", "launch-check-test.mjs", "hud-test.mjs"]) {
     const p = path.join(root, "plugins", "jongmin-skills", "scripts", t);
     try {
       execFileSync("node", [p], { encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
@@ -143,7 +144,7 @@ function check4(root) {
       if (x.includes(y) || y.includes(x)) { overlaps++; fail("4B", `trigger overlap: ${a}"${x}" ~ ${b}"${y}"`); }
     }
   }
-  if (!overlaps) pass("4B", "trigger substring overlap: none across 7 skills");
+  if (!overlaps) pass("4B", "trigger substring overlap: none across 8 skills");
 }
 
 // 5) 용어 정합 — 규약 정본 용어의 금지 변형어를 탐지한다 (S10).

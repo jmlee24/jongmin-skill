@@ -8,7 +8,11 @@
 ```
 /plugin marketplace add https://github.com/jmlee24/jongmin-skill.git
 /plugin install jongmin-skills@jongmin-skill
+/jongmin-skills:hud-setup
 ```
+
+세 번째 줄은 선택 — 상태줄에 사용량 HUD(5h·주간·모델별·ctx)를 심는다. 설치 부속이라 이후 컨텍스트를
+차지하지 않는다. 자세한 내용은 [hud-setup](plugins/jongmin-skills/skills/hud-setup/SKILL.md).
 
 플러그인 없이 쓰려면 `plugins/jongmin-skills/skills/<이름>/` 폴더를 `~/.claude/skills/`에,
 `plugins/jongmin-skills/agents/*.md`를 `~/.claude/agents/`에 복사해도 동작한다.
@@ -139,6 +143,21 @@ executor-prompt 5요소로 즉시 컴파일 가능해야 계획 완성으로 친
 
 **호출**: 자동 발동 또는 "handoff", "스냅샷 떠줘", "이어서 할 수 있게".
 
+### [hud-setup](plugins/jongmin-skills/skills/hud-setup/SKILL.md) — 사용량 HUD 설치 부속
+
+**수행**: `scripts/hud-setup.mjs`를 실행해 `<configDir>/hud/jongmin-hud.mjs` 래퍼를 심고 `settings.json`의
+`statusLine`을 등록한다(기존 값은 백업 후 교체, 보고에 명시). 래퍼는 매 실행마다 플러그인 캐시의 **최신
+버전** 렌더러(`scripts/usage-hud.mjs`, 의존성 0)를 찾으므로 autoUpdate 뒤에도 경로가 깨지지 않는다.
+표시: 모델 | 5h | 주간 | 모델별 주간 버킷 | ctx. 5h·주간·ctx는 클코 statusline stdin만 사용(네트워크 0),
+모델별 버킷만 `/api/oauth/usage`를 60초당 1회 호출(실패 시 마지막 성공값 유지).
+
+**쓸 때**: 플러그인 설치 직후 머신당 1회. `check`(상태 확인), `uninstall`(제거)도 같은 명령.
+
+**안 쓸 때**: 개발 작업 전반 — 이 스킬은 설치기다. 설치 후 상태줄은 모델 컨텍스트에 0토큰, 훅 0개.
+
+**호출**: **슬래시 전용** — `/jongmin-skills:hud-setup [check | uninstall]`. 자연어로는 발동하지 않는다.
+WSL과 Windows는 config 디렉터리가 다르므로 각각 실행한다.
+
 ## 검증된 조합 패턴 (2026-08-08 실전)
 
 - **deep-audit → conductor**: 감사 CONFIRMED 항목이 웨이브 입력으로 직결, 수정 시 회귀 가드 동일 착지
@@ -158,7 +177,7 @@ node plugins/jongmin-skills/scripts/validate.mjs
 ① `claude plugin validate` — stdout warning 0건 판정 (이 명령은 warning이 있어도 exit 0을
    반환하므로 exit code를 신뢰하지 않는다). **①의 실제 검증 범위는 마켓플레이스 매니페스트
    1건뿐이다** — 스킬 본문·frontmatter는 검사하지 않는다.
-② Stop 가드·state CLI·발진 검증기 회귀 테스트 (guard-test + state-test + launch-check-test, tmpdir 격리·실장부 불변 단언 포함)
+② Stop 가드·state CLI·발진 검증기·HUD 회귀 테스트 (guard-test + state-test + launch-check-test + hud-test, tmpdir 격리·실장부 불변 단언 포함)
 ③ 링크 무결성 — shared 상호참조·동일 디렉터리·README 상대 링크 (디렉터리 링크 허용)
 ④ description 검사 — 변경 스킬은 확정 문자열 완전 일치(④-A), 미변경 스킬은 회귀 lint(④-B:
    단일 라인·비발동 절 존재·트리거 부분문자열 중첩 0건)
@@ -170,6 +189,14 @@ node plugins/jongmin-skills/scripts/validate.mjs
 부분 실행 `--only=3,4`, 다른 트리 검사 `--root=<dir>` (픽스처 음성 확인용).
 
 ## 변경 이력
+
+### v1.11.0 (2026-09-10) — hud-setup: OMC HUD 대체 설치 부속
+
+oh-my-claudecode 제거 전제에서 유일하게 남은 효용(상태줄 사용량 HUD)을 패밀리 안으로 이관. 자체 렌더러
+`scripts/usage-hud.mjs`(의존성 0, 항상 exit 0) + 고정 경로 래퍼 2단 구조 — 플러그인이 `statusLine`을 설정할
+수 없고 캐시 경로에 버전이 박히는 제약은 OMC와 동일. 모델별 주간 버킷은 `/api/oauth/usage` 응답의
+`limits[].kind === "weekly_scoped"`에서 읽는다(2026-09-10 실측). 슬래시 전용(disable-model-invocation)이라
+설치 후 컨텍스트 비용 0. hud-test 31건이 validate ②에 합류 (CX 맹검 리뷰 5건 중 4건 접합: 실패 TTL 스탬프·관리 판정 토큰화·프리릴리스 정렬·라벨 개행).
 
 ### v1.10.0 (2026-09-08) — 2차 배치 1차분: 발진 내용 검증기 · improve 입력 규약 · 이력 소각
 
