@@ -2,7 +2,7 @@
 // 릴리스 검증 묶음 — 단일 진입점 (PRD S6). 출력 ASCII.
 // 사용: node validate.mjs [--only=1,...,6] [--root=<repo root>]
 // 항목: 1) claude plugin validate (stdout warning 판정 — exit code 신뢰 금지)
-//       2) guard-test + state-test + launch-check-test + hud-test
+//       2) guard-test + state-test + launch-check-test + hud-test + handoff-check-test
 //       3) 링크 무결성 (shared 상호참조 + 동일 디렉터리 + README, 디렉터리 링크 허용)
 //          한계: inline 링크만 검사 — reference-style([x][id])·anchor-only(#a)·<> 감싼 링크는
 //          미검사 (현 repo는 inline만 사용, cx-s6 defer)
@@ -81,7 +81,7 @@ function check1(root) {
 }
 
 function check2(root) {
-  for (const t of ["guard-test.mjs", "state-test.mjs", "launch-check-test.mjs", "hud-test.mjs"]) {
+  for (const t of ["guard-test.mjs", "state-test.mjs", "launch-check-test.mjs", "hud-test.mjs", "handoff-check-test.mjs"]) {
     const p = path.join(root, "plugins", "jongmin-skills", "scripts", t);
     try {
       execFileSync("node", [p], { encoding: "utf-8", stdio: ["ignore", "pipe", "pipe"] });
