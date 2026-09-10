@@ -24,8 +24,10 @@ argument-hint: "[check | uninstall]"
 | 인자 | 명령 | 하는 일 |
 |---|---|---|
 | (없음) | `node "<스킬 base dir>/../../scripts/hud-setup.mjs"` | 래퍼 생성 → settings.json 백업 → statusLine 등록 → 렌더 테스트 |
-| `check` | `node "<스킬 base dir>/../../scripts/hud-setup.mjs" --check` | 현재 statusLine·래퍼 상태와 렌더 결과만 출력 (변경 없음) |
+| `check` | `node "<스킬 base dir>/../../scripts/hud-setup.mjs" --check` | 현재 statusLine·래퍼 상태와 렌더 결과만 출력 (변경 없음). 종료 코드 0 = 정상(`STATUS OK`), 1 = 래퍼 없음·statusLine 미관리·렌더 실패(`STATUS FAIL: …`에 원인) |
 | `uninstall` | `node "<스킬 base dir>/../../scripts/hud-setup.mjs" --uninstall` | 이 스킬이 등록한 statusLine 제거 + 래퍼 삭제 (타 도구가 등록한 statusLine은 건드리지 않음) |
+
+표의 명령 형태를 정확히 지킨다 — `--check`/`--uninstall` 외의 인자(예: 맨 `check`, `--bogus`)를 주면 스크립트는 사용법만 출력하고 종료 코드 2로 끝나며 **어떤 파일도 쓰지 않는다**.
 
 보고에 반드시 포함:
 - `REPLACED previous statusLine: …` 줄이 있으면 **기존 statusline이 교체되었음**과 `BACKUP` 경로.

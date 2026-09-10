@@ -4,9 +4,10 @@
 //      → 항상 exit 0, 값 반영
 //   2) hud-setup.mjs: 격리 CLAUDE_CONFIG_DIR에서 install → check → uninstall 왕복,
 //      다른 설정 키 보존·백업 생성·래퍼 생성/삭제·비관리 statusLine 보존 확인
+//      + 미인식 인자 거부(exit 2, 무기록) / --check 종료 코드 / 래퍼의 손상 렌더러 폴백
 // 판정 문자열은 ASCII.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,6 +16,8 @@ import { spawnSync } from "node:child_process";
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const RENDERER = resolve(SCRIPT_DIR, "usage-hud.mjs");
 const SETUP = resolve(SCRIPT_DIR, "hud-setup.mjs");
+// hud-setup.mjs가 미인식 인자에 쓰는 종료 코드 (설치 실패 1과 구분한다)
+const EXIT_USAGE = 2;
 
 let failures = 0;
 function pass(msg) { console.log(`PASS [hud] ${msg}`); }
@@ -185,6 +188,51 @@ expect(r.status === 1 && readFileSync(settingsPath, "utf-8") === "[]", "install 
 writeFileSync(settingsPath, "{broken");
 r = run(SETUP, [], "");
 expect(r.status === 1 && readFileSync(settingsPath, "utf-8") === "{broken", "install refuses to overwrite unparsable settings.json");
+
+// 허용 플래그 밖의 인자는 사용법만 내고 exit 2 — 어떤 파일도 쓰지 않는다 (D1)
+const argDir = mkdtempSync(join(tmpdir(), "jongmin-hud-args-"));
+for (const bad of ["check", "--bogus"]) {
+  r = spawnSync(process.execPath, [SETUP, bad], { input: "", encoding: "utf-8", env: { ...env, CLAUDE_CONFIG_DIR: argDir }, timeout: 15_000 });
+  const leftovers = readdirSync(argDir);
+  expect(r.status === EXIT_USAGE, `setup rejects unrecognized argument "${bad}" with exit ${EXIT_USAGE} (got: ${r.status})`);
+  expect(/usage:/.test(r.stdout), `setup prints usage for unrecognized argument "${bad}"`);
+  expect(leftovers.length === 0, `setup writes no file for unrecognized argument "${bad}" (found: ${leftovers.join(",") || "none"})`);
+}
+rmSync(argDir, { recursive: true, force: true });
+
+// --check는 상태를 종료 코드로 알린다: 미설치 1, 정상 설치 0 (D7)
+const checkDir = mkdtempSync(join(tmpdir(), "jongmin-hud-check-"));
+const checkEnv = { ...env, CLAUDE_CONFIG_DIR: checkDir };
+r = spawnSync(process.execPath, [SETUP, "--check"], { input: "", encoding: "utf-8", env: checkEnv, timeout: 15_000 });
+expect(r.status === 1, `setup --check exits 1 when the wrapper is missing (got: ${r.status})`);
+expect(/wrapper missing/.test(r.stdout), "setup --check names the missing wrapper as the cause");
+r = spawnSync(process.execPath, [SETUP], { input: "", encoding: "utf-8", env: checkEnv, timeout: 15_000 });
+expect(r.status === 0, `setup install exits 0 in a fresh config dir (got: ${r.status})`);
+r = spawnSync(process.execPath, [SETUP, "--check"], { input: "", encoding: "utf-8", env: checkEnv, timeout: 15_000 });
+expect(r.status === 0 && /STATUS OK/.test(r.stdout), `setup --check exits 0 after a healthy install (got: ${r.status})`);
+rmSync(checkDir, { recursive: true, force: true });
+
+// 래퍼는 손상된 최신 렌더러를 건너뛰고 다음 후보를 쓴다 — 전부 실패해도 exit 0 (D6)
+// 폴백 후보까지 손상시켜야 "전 후보 실패" 경로가 나오므로 설치기를 tmpdir의 가짜 플러그인 루트로 복사해 실행한다
+const CORRUPT_SOURCE = "this is ((( not valid js\n";
+const corruptDir = mkdtempSync(join(tmpdir(), "jongmin-hud-corrupt-"));
+const fakePluginScripts = join(corruptDir, "fakeplugin", "scripts");
+mkdirSync(fakePluginScripts, { recursive: true });
+copyFileSync(SETUP, join(fakePluginScripts, "hud-setup.mjs"));
+writeFileSync(join(fakePluginScripts, "usage-hud.mjs"), CORRUPT_SOURCE);
+const corruptEnv = { ...env, CLAUDE_CONFIG_DIR: corruptDir };
+spawnSync(process.execPath, [join(fakePluginScripts, "hud-setup.mjs")], { input: "", encoding: "utf-8", env: corruptEnv, timeout: 15_000 });
+const corruptWrapper = join(corruptDir, "hud", "jongmin-hud.mjs");
+const corruptCache = join(corruptDir, "plugins", "cache", "jongmin-skill", "jongmin-skills");
+for (const v of ["1.12.0", "1.12.1"]) mkdirSync(join(corruptCache, v, "scripts"), { recursive: true });
+writeFileSync(join(corruptCache, "1.12.0", "scripts", "usage-hud.mjs"), 'process.stdout.write("MARK 1.12.0\\n");\n');
+writeFileSync(join(corruptCache, "1.12.1", "scripts", "usage-hud.mjs"), CORRUPT_SOURCE);
+r = spawnSync(process.execPath, [corruptWrapper], { input: "{}", encoding: "utf-8", env: corruptEnv, timeout: 15_000 });
+expect(r.status === 0 && r.stdout.trim() === "MARK 1.12.0", `wrapper falls back past a corrupt newest renderer (status: ${r.status}, stdout: ${JSON.stringify(r.stdout.trim())})`);
+writeFileSync(join(corruptCache, "1.12.0", "scripts", "usage-hud.mjs"), CORRUPT_SOURCE);
+r = spawnSync(process.execPath, [corruptWrapper], { input: "{}", encoding: "utf-8", env: corruptEnv, timeout: 15_000 });
+expect(r.status === 0 && r.stdout.trim().split("\n").length === 1 && /renderer not found/.test(r.stdout), `wrapper prints one line and exits 0 when every renderer is corrupt (status: ${r.status}, stdout: ${JSON.stringify(r.stdout.trim())})`);
+rmSync(corruptDir, { recursive: true, force: true });
 
 rmSync(isoDir, { recursive: true, force: true });
 console.log(failures ? `hud-test: ${failures} FAILED` : "hud-test: all passed");

@@ -2,8 +2,9 @@
 // jongmin-skills HUD 설치기 — /jongmin-skills:hud-setup 이 실행한다.
 //
 //   node hud-setup.mjs            설치: 래퍼 생성 + settings.json statusLine 등록 + 렌더 테스트
-//   node hud-setup.mjs --check    현재 상태만 출력 (변경 없음)
+//   node hud-setup.mjs --check    현재 상태만 출력 (변경 없음) — 정상 0 / 미설치·렌더 실패 1
 //   node hud-setup.mjs --uninstall  statusLine 제거 + 래퍼 삭제 (설정 백업은 남긴다)
+//   그 밖의 인자는 사용법만 출력하고 종료 코드 2 — 아무것도 쓰지 않는다
 //
 // 왜 래퍼가 필요한가: 플러그인은 statusLine을 설정할 수 없고, 플러그인 캐시 경로에는 버전이
 // 박혀 있어(…/jongmin-skills/1.10.0/…) autoUpdate마다 경로가 바뀐다. settings.json은 버전이
@@ -22,14 +23,29 @@ const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const PLUGIN_ROOT = resolve(SCRIPT_DIR, "..");
 const RENDERER_REL = "scripts/usage-hud.mjs";
 const RENDER_TEST_TIMEOUT_MS = 10_000;
+const EXIT_OK = 0;
+const EXIT_FAIL = 1;
+// 미인식 인자는 설치 실패(1)와 구분한다 — 호출부가 오타를 즉시 알아채도록
+const EXIT_USAGE = 2;
+const ALLOWED_FLAGS = new Set(["--check", "--uninstall"]);
 
 const configDir = process.env.CLAUDE_CONFIG_DIR || join(homedir(), ".claude");
 const settingsPath = join(configDir, "settings.json");
 const wrapperPath = join(configDir, "hud", "jongmin-hud.mjs");
 const nodePath = process.execPath;
 
-const args = new Set(process.argv.slice(2));
+const argv = process.argv.slice(2);
+// 오타·잘못된 형태(맨 check 등)가 인자 없음으로 흘러 설치(쓰기)로 폴백하면 사용자 설정이 재기록된다
+const unknownArgs = argv.filter((a) => !ALLOWED_FLAGS.has(a));
+const args = new Set(argv);
 const mode = args.has("--uninstall") ? "uninstall" : args.has("--check") ? "check" : "install";
+
+function printUsage() {
+  console.log("usage:");
+  console.log("  node hud-setup.mjs              install wrapper + settings.json statusLine");
+  console.log("  node hud-setup.mjs --check      report current state only (no writes)");
+  console.log("  node hud-setup.mjs --uninstall  remove managed statusLine + wrapper");
+}
 
 function toPosix(p) {
   return p.replace(/\\/g, "/");
@@ -94,7 +110,8 @@ function compareVersionDesc(a, b) {
   }
   return (ka.pre ? 1 : 0) - (kb.pre ? 1 : 0);
 }
-function resolveRenderer() {
+function rendererCandidates() {
+  const out = [];
   try {
     const versions = readdirSync(CACHE_ROOT, { withFileTypes: true })
       .filter((d) => d.isDirectory())
@@ -102,20 +119,39 @@ function resolveRenderer() {
       .sort(compareVersionDesc);
     for (const v of versions) {
       const p = join(CACHE_ROOT, v, RENDERER_REL);
-      if (existsSync(p)) return p;
+      if (existsSync(p)) out.push(p);
     }
   } catch {
     // 캐시 없음 → FALLBACK
   }
   const fallback = join(FALLBACK_ROOT, RENDERER_REL);
-  return existsSync(fallback) ? fallback : null;
+  if (existsSync(fallback)) out.push(fallback);
+  return out;
 }
 
-const target = resolveRenderer();
-if (!target) {
+// autoUpdate가 새 버전을 쓰는 도중이면 최신 디렉터리의 렌더러가 손상·부분 기록일 수 있다.
+// 해석·구문 단계 실패만 다음 후보로 넘긴다 — 평가 단계 오류는 렌더러가 이미 출력했을 수 있어
+// 재시도하면 상태줄이 두 번 그려진다 (import 성공 = 종료).
+function isLoadFailure(err) {
+  return err instanceof SyntaxError || err?.code === "ERR_MODULE_NOT_FOUND" || err?.code === "ENOENT";
+}
+
+let rendered = false;
+for (const target of rendererCandidates()) {
+  try {
+    await import(pathToFileURL(target).href);
+    rendered = true;
+    break;
+  } catch (err) {
+    if (!isLoadFailure(err)) {
+      rendered = true;
+      break;
+    }
+  }
+}
+// statusline은 어떤 경우에도 비정상 종료하지 않는다
+if (!rendered) {
   process.stdout.write("jongmin-hud: renderer not found (reinstall: /jongmin-skills:hud-setup)\\n");
-} else {
-  await import(pathToFileURL(target).href);
 }
 `;
 }
@@ -169,7 +205,7 @@ function install() {
   console.log(`RENDER ${t.ok ? "OK" : "FAIL"}: ${t.stdout.trim()}`);
   if (!t.ok && t.stderr) console.log(t.stderr.trim());
   console.log(t.ok ? "DONE - restart Claude Code (or open a new session) to see the HUD" : "DONE WITH ERRORS");
-  return t.ok ? 0 : 1;
+  return t.ok ? EXIT_OK : EXIT_FAIL;
 }
 
 function uninstall() {
@@ -188,17 +224,32 @@ function uninstall() {
     console.log(`REMOVED wrapper ${wrapperPath}`);
   }
   console.log("DONE");
-  return 0;
+  return EXIT_OK;
 }
 
+// 종료 코드로 설치 상태를 알린다 — 스크립트로 점검할 때 stdout 파싱이 필요 없도록
 function check() {
   const settings = readSettings();
   printState(settings);
-  if (existsSync(wrapperPath)) {
+  const wrapperPresent = existsSync(wrapperPath);
+  let renderOk = false;
+  if (wrapperPresent) {
     const t = renderTest();
+    renderOk = t.ok;
     console.log(`RENDER ${t.ok ? "OK" : "FAIL"}: ${t.stdout.trim()}`);
   }
-  return 0;
+  const problems = [];
+  if (!wrapperPresent) problems.push("wrapper missing");
+  if (!isManaged(settings.statusLine)) problems.push("statusLine not managed");
+  if (wrapperPresent && !renderOk) problems.push("render failed");
+  console.log(problems.length ? `STATUS FAIL: ${problems.join(", ")}` : "STATUS OK");
+  return problems.length ? EXIT_FAIL : EXIT_OK;
+}
+
+if (unknownArgs.length) {
+  console.log(`UNRECOGNIZED ARGUMENT: ${unknownArgs.join(" ")}`);
+  printUsage();
+  process.exit(EXIT_USAGE);
 }
 
 try {
@@ -206,5 +257,5 @@ try {
   process.exit(code);
 } catch (e) {
   console.log(`ERROR ${e?.message ?? e}`);
-  process.exit(1);
+  process.exit(EXIT_FAIL);
 }
