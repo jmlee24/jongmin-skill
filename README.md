@@ -140,6 +140,11 @@ executor-prompt 5요소로 즉시 컴파일 가능해야 계획 완성으로 친
 장부 경로에. 기본은 이탈 저장(레인 정지), `--keep-lanes`는 레인을 살린 중간 체크포인트. `restore` — 스냅샷과 현재 상태를 대조(SHA·더티 차이 보고)하고 "다음
 단계"부터 재개 제안, 유예된 결정을 먼저 제시.
 
+**할루시네이션 필터(v1.5)**: 스냅샷을 쓰는 T1은 컨텍스트가 꽉 차 있어 가장 위험한 주체다 — save는 `scripts/handoff-check.mjs`가
+SHA·경로·파일:라인·명령의 실존을 0.2초 기계 검사하고 실패 줄에 `[UNVERIFIED]`를 붙인다(LLM 검증 없음 — 지연이 스냅샷을
+놓침). restore는 코드 층 재실행 + 빈 컨텍스트 T2가 완료·원인·다음 단계 주장을 VERIFIED/UNVERIFIED/CONTRADICTED로
+판정하고, 그 근거를 다시 코드 층이 검사한다(근거 MISSING → 격하). CONTRADICTED는 재개 전 사용자 제시.
+
 **쓸 때**: 컨텍스트 압축(컴팩션) 임박, 개인↔법인 계정 전환, 기기 이동, 웨이브 중단·재개.
 
 **안 쓸 때**: 단순 작업 요약 요청.
@@ -191,7 +196,7 @@ node plugins/jongmin-skills/scripts/validate.mjs
 ① `claude plugin validate` — stdout warning 0건 판정 (이 명령은 warning이 있어도 exit 0을
    반환하므로 exit code를 신뢰하지 않는다). **①의 실제 검증 범위는 마켓플레이스 매니페스트
    1건뿐이다** — 스킬 본문·frontmatter는 검사하지 않는다.
-② Stop 가드·state CLI·발진 검증기·HUD 회귀 테스트 (guard-test + state-test + launch-check-test + hud-test, tmpdir 격리·실장부 불변 단언 포함)
+② Stop 가드·state CLI·발진 검증기·HUD·handoff-check 회귀 테스트 (guard-test + state-test + launch-check-test + hud-test + handoff-check-test, tmpdir 격리·실장부 불변 단언 포함)
 ③ 링크 무결성 — shared 상호참조·동일 디렉터리·README 상대 링크 (디렉터리 링크 허용)
 ④ description 검사 — 변경 스킬은 확정 문자열 완전 일치(④-A), 미변경 스킬은 회귀 lint(④-B:
    단일 라인·비발동 절 존재·트리거 부분문자열 중첩 0건)
@@ -214,6 +219,8 @@ node plugins/jongmin-skills/scripts/validate.mjs
   source_verdict), landing-check 「선택 외부 리뷰 — /code-review ultra」(권고만·사용자 실행분만 큐 등록), conductor §6 외부
   리뷰 재확인 경로, 쓰기 레인 격리 Agent `isolation: "worktree"` 기본, codex-lane 생존 판정 알림 우선. 기각: quick/deep
   개명, ultra 자동화, 네이티브 CONFIRMED 승격.
+- **handoff v1.5 할루시네이션 필터**: `handoff-check.mjs`(save·restore 코드 층, 테스트 29건) + restore T2 의미 검증 필수. CX 맹검
+  리뷰 5건 전부 접합(루트 file:line·줄별 주석·명시 숫자 SHA·근거 MISSING 격하·SHA 일괄 검사로 지연 상한).
 - **HUD**: 2줄 레이아웃 — [1] 클로드 모델·effort·5h·주간·모델별 버킷·ctx [2] codex 모델·effort(config.toml)·사용량.
   codex 5h 창은 계정 응답(`account/rateLimits/read`와 동일 출처)에 있을 때만 표시 — prolite는 주간만 옴(2026-09-10 실측). hud-test 41건.
 - **릴리스 게이트 CX 접합**(gpt-6-astra, 맹검 리뷰 5건 + 6원칙 감사): 수용 — worktree isolation은 단일 레인 한정(검증기가

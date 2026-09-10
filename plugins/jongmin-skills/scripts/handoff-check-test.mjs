@@ -19,6 +19,7 @@ git("config", "user.email", "t@t"); git("config", "user.name", "t");
 mkdirSync(join(repo, "src"), { recursive: true });
 writeFileSync(join(repo, "src", "app.mjs"), Array.from({ length: 20 }, (_, i) => `line ${i + 1}`).join("\n") + "\n");
 writeFileSync(join(repo, "scripts.mjs"), "export {};\n");
+writeFileSync(join(repo, "README.md"), "a\nb\nc\nd\ne\n");
 git("add", "-A"); git("commit", "-q", "-m", "init");
 const sha = git("rev-parse", "--short", "HEAD").stdout.trim();
 const full = git("rev-parse", "HEAD").stdout.trim();
@@ -29,6 +30,8 @@ const snapshot = [
   "명령: `node scripts.mjs --json` / `node scripts/nope.mjs` / `nonexistent-bin-xyz run`",
   "장부: ~/.claude/jongmin-ledgers/does-not-exist-xyz/progress.md",
   "비율 3/4 는 경로가 아니다. URL https://example.com/a/b 도 아니다. <placeholder>/x 도 아니다. 숫자 1789029000 도 SHA가 아니다.",
+  "루트 파일 인용 README.md:3 과 nope-root.md:12, 반복 언급 cx-absent.mjs, 명시 숫자 SHA: HEAD SHA 1111111111111111111111111111111111111111",
+  "다음 단계: cx-absent.mjs 수정",
   "호스트 chatgpt.com/backend-api/usage 도, 조사 붙은 account/rateLimits/read와 5h/주간/ctx는 도, 슬래시 명령 /jongmin-skills:hud-setup 과 /code-review 도, 기호 ④-C/①/⑦ 도 경로가 아니다.",
   "",
 ].join("\n");
@@ -53,14 +56,25 @@ expect(/^MISSING path ~\/\.claude\/jongmin-ledgers\/does-not-exist-xyz\/progress
 expect(!/ 3\/4 /.test(out) && !/example\.com/.test(out) && !/placeholder/.test(out), "ratios, URLs and placeholders are skipped");
 expect(!/chatgpt\.com/.test(out) && !/rateLimits/.test(out) && !/주간/.test(out) && !/jongmin-skills:hud-setup/.test(out) && !/code-review/.test(out) && !/④/.test(out), "bare hostnames, non-ASCII tokens and slash commands are skipped");
 expect(/^handoff-check: \d+ checked, \d+ ok, [1-9]\d* unverified$/m.test(out), "summary line present");
+expect(/^OK file:line README\.md:3 /m.test(out), "root-level file:line that exists → OK (CX#1)");
+expect(/^MISSING path nope-root\.md /m.test(out), "root-level file:line with missing file → MISSING (CX#1)");
+expect(/^MISSING sha 1111111111111111111111111111111111111111 /m.test(out), "explicit digit-only SHA claim → MISSING (CX#3)");
+expect((out.match(/^MISSING path cx-absent\.mjs /gm) || []).length === 2, "repeated missing item reported on each line (CX#2)");
 
 // --annotate: 원문 보존 + 문제 줄에만 UNVERIFIED 꼬리
 r = spawnSync(process.execPath, [CHECK, snapPath, "--cwd", repo, "--annotate"], { encoding: "utf-8" });
 const ann = r.stdout.split("\n");
 expect(/\[UNVERIFIED: sha deadb33f\]$/.test(ann[0]), "annotate marks fabricated SHA on its line");
 expect(/\[UNVERIFIED: .*file:line src\/app\.mjs:99.*path src\/missing\.mjs.*\]$/.test(ann[1]), "annotate lists all problems of a line");
-expect(!/UNVERIFIED/.test(ann[4]) && !/UNVERIFIED/.test(ann[5]), "annotate leaves clean lines untouched");
+expect(/cx-absent\.mjs\]$/.test(ann[6]), "annotate marks repeated item on its later line too (CX#2)");
+expect(!/UNVERIFIED/.test(ann[7]) && !/UNVERIFIED/.test(ann[8]), "annotate leaves clean lines untouched");
 expect(/handoff-check: \d+ checked, \d+ unverified/.test(r.stderr), "annotate summary goes to stderr");
+
+// 지연 상한: 8자리 hex 후보 600개 → git 프로세스 1회, 2초 미만 (CX#5)
+writeFileSync(snapPath, Array.from({ length: 600 }, (_, i) => `a${(i + 0x100000).toString(16).padStart(7, "0")}`).join(" ") + "\n");
+const t0 = Date.now();
+r = spawnSync(process.execPath, [CHECK, snapPath, "--cwd", repo], { encoding: "utf-8" });
+expect(Date.now() - t0 < 2000 && /600 checked|500 checked/.test(r.stdout), `600 SHA candidates checked in one batch under 2s (${Date.now() - t0}ms)`);
 
 // 깨끗한 스냅샷 → exit 0
 writeFileSync(snapPath, `SHA ${sha}, 파일 \`src/app.mjs:3\`, 명령 \`git status\`\n`);

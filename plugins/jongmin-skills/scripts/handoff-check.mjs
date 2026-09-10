@@ -31,14 +31,17 @@ const text = input === "-" ? readFileSync(0, "utf-8") : readFileSync(input, "utf
 const lines = text.split(/\r?\n/);
 
 const isGitRepo = spawnSync("git", ["rev-parse", "--git-dir"], { cwd, encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] }).status === 0;
+// SHA는 후보를 모아 git cat-file --batch-check 1회로 판정한다 — 후보당 프로세스 1개면 긴 스냅샷에서 컴팩션 창을 넘긴다 (CX#5)
+const MAX_SHA_CANDIDATES = 500;
 const shaCache = new Map();
-function shaExists(sha) {
-  if (!shaCache.has(sha)) {
-    const r = spawnSync("git", ["cat-file", "-e", `${sha}^{commit}`], { cwd, encoding: "utf-8", stdio: ["ignore", "pipe", "ignore"] });
-    shaCache.set(sha, r.status === 0);
-  }
-  return shaCache.get(sha);
+function resolveShas(shas) {
+  const todo = [...new Set(shas)].filter((s) => !shaCache.has(s)).slice(0, MAX_SHA_CANDIDATES);
+  if (!todo.length) return;
+  const r = spawnSync("git", ["cat-file", "--batch-check"], { cwd, encoding: "utf-8", input: todo.join("\n") + "\n", stdio: ["pipe", "pipe", "ignore"] });
+  const lines = (r.stdout ?? "").split("\n");
+  todo.forEach((s, i) => shaCache.set(s, !!lines[i] && !/ missing$| ambiguous$/.test(lines[i]) && / commit /.test(lines[i])));
 }
+const shaExists = (sha) => shaCache.get(sha) === true;
 const binCache = new Map();
 function binExists(bin) {
   if (!binCache.has(bin)) {
@@ -59,7 +62,7 @@ function lineCount(file) {
 const results = [];
 const seen = new Set();
 function push(kind, item, lineNo, status, note = "") {
-  const key = `${kind}|${item}`;
+  const key = `${kind}|${item}|${lineNo}`;
   if (seen.has(key)) return;
   seen.add(key);
   results.push({ kind, item, line: lineNo, status, note });
@@ -68,19 +71,29 @@ function push(kind, item, lineNo, status, note = "") {
 const shaRe = /(?<![\w/])([0-9a-f]{7,40})(?![\w/])/g;
 const tokenRe = /`([^`]+)`|(\S+)/g;
 
+// 1) SHA 후보 수집 — 7~40 hex. 순수 숫자 토큰(타임스탬프 등)은 "SHA/HEAD/commit/기준/커밋" 문맥 뒤에 올 때만 후보로,
+//    그 외 순수 숫자는 repo에 실존할 때만 OK로 보고하고 없으면 조용히 넘긴다 (CX#3: 명시된 커밋 주장은 놓치지 않는다)
+const explicitRe = /(sha|head|commit|기준|커밋)\s*[:=]?\s*[(]?\s*$/i;
+const shaCands = [];
 lines.forEach((raw, idx) => {
-  const lineNo = idx + 1;
-  // 1) SHA — 7~40 hex. 순수 숫자 토큰(타임스탬프 등)은 repo에 실존할 때만 OK로 보고하고 없으면 조용히 넘긴다
-  //    (짧은 SHA가 순수 숫자일 확률 약 4% — 놓치지 않으면서 숫자 오탐도 내지 않는 절충)
   for (const m of raw.matchAll(shaRe)) {
     const sha = m[1];
     if (sha.length < MIN_SHA || sha.length > MAX_SHA) continue;
     const digitsOnly = !/[a-f]/.test(sha);
-    if (!isGitRepo) { if (!digitsOnly) push("sha", sha, lineNo, "SKIP", "not a git repo"); continue; }
-    const exists = shaExists(sha);
-    if (digitsOnly && !exists) continue;
-    push("sha", sha, lineNo, exists ? "OK" : "MISSING");
+    const explicit = explicitRe.test(raw.slice(Math.max(0, m.index - 16), m.index));
+    shaCands.push({ sha, lineNo: idx + 1, digitsOnly, explicit });
   }
+});
+if (isGitRepo) resolveShas(shaCands.map((c) => c.sha));
+for (const c of shaCands) {
+  if (!isGitRepo) { if (!c.digitsOnly || c.explicit) push("sha", c.sha, c.lineNo, "SKIP", "not a git repo"); continue; }
+  const exists = shaExists(c.sha);
+  if (c.digitsOnly && !c.explicit && !exists) continue;
+  push("sha", c.sha, c.lineNo, exists ? "OK" : "MISSING");
+}
+
+lines.forEach((raw, idx) => {
+  const lineNo = idx + 1;
   // 2) 백틱 명령 / 경로 / 파일:라인
   for (const m of raw.matchAll(tokenRe)) {
     const span = m[1];
@@ -108,11 +121,10 @@ function checkPathToken(tok, lineNo) {
   if (/[^\x00-\x7F]/.test(t)) return;
   if (/^[\w.-]+\.(com|net|org|io|dev|ai|kr|co)(\/|$)/i.test(t)) return;
   if (/^\/[a-z][\w-]*(:[\w-]+)*$/i.test(t)) return;
-  if (!/[\\/]/.test(t) && !FILE_EXT.test(t)) return;
   if (/^[\\/]+$/.test(t) || /^\.{1,2}[\\/]?$/.test(t)) return;
-  // 파일:라인 / 파일:라인-라인
+  // 파일:라인 / 파일:라인-라인 — 구분자 없는 루트 파일(README.md:12)도 여기서 잡는다 (CX#1)
   const fl = t.match(/^(.+?):(\d+)(?:-(\d+))?$/);
-  if (fl && !/^[A-Za-z]:$/.test(fl[1])) {
+  if (fl && !/^[A-Za-z]:$/.test(fl[1]) && (/[\\/]/.test(fl[1]) || FILE_EXT.test(fl[1]))) {
     const file = expandPath(fl[1]);
     if (existsSync(file) && statSync(file).isFile()) {
       const n = lineCount(file);
@@ -123,6 +135,7 @@ function checkPathToken(tok, lineNo) {
     }
     return;
   }
+  if (!/[\\/]/.test(t) && !FILE_EXT.test(t)) return;
   checkPath(t, lineNo);
 }
 function checkPath(t, lineNo) {
