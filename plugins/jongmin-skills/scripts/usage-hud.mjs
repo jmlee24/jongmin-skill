@@ -2,7 +2,7 @@
 // jongmin-skills HUD — Claude Code statusline 렌더러 (의존성 없음).
 //
 // 입력: Claude Code가 statusline 명령의 stdin으로 주는 JSON 1건.
-// 출력: 한 줄 — 모델 effort | 5h 게이지 | 주간 게이지 | 모델별 주간 버킷 | ctx 게이지.
+// 출력: 한 줄 — 모델 effort | 5h | 주간 | 모델별 주간 버킷 | codex 사용량 | ctx.
 //
 // 5h·주간·ctx는 stdin의 rate_limits / context_window만으로 그린다 (네트워크 0).
 // 모델별 주간 버킷(예: Fable 77%)은 stdin에 없어서 api.anthropic.com/api/oauth/usage를
@@ -25,6 +25,12 @@ const DANGER_PCT = 80;
 const CTX_WARN_PCT = 60;
 const CTX_DANGER_PCT = 85;
 const USAGE_URL = process.env.JONGMIN_HUD_API_URL || "https://api.anthropic.com/api/oauth/usage";
+// codex(ChatGPT 계정) 사용량 — codex TUI /status가 쓰는 백엔드. auth.json의 access_token + account_id로 200 OK (2026-09-10 실측)
+const CODEX_USAGE_URL = process.env.JONGMIN_HUD_CODEX_URL || "https://chatgpt.com/backend-api/wham/usage";
+const CODEX_HOME = process.env.CODEX_HOME || join(homedir(), ".codex");
+const codexDisabled = process.env.JONGMIN_HUD_NO_CODEX === "1";
+const HOURS_5_SEC = 5 * 3600;
+const DAYS_7_SEC = 7 * 24 * 3600;
 // OAuth 엔드포인트가 요구하는 베타 헤더·UA 형식 — OMC HUD와 동일 값 (실측 200 OK)
 const OAUTH_BETA = "oauth-2025-04-20";
 const DEFAULT_CLIENT_VERSION = "2.1.0";
@@ -186,28 +192,77 @@ async function fetchUsage(clientVersion) {
   return res.json();
 }
 
-async function loadUsage(clientVersion, nowMs) {
-  const cached = readCache();
-  if (cached && nowMs - (cached.fetchedAt ?? 0) < CACHE_TTL_MS) return cached;
-  if (apiDisabled) return cached;
+function readCodexAuth() {
   try {
-    const response = await fetchUsage(clientVersion);
-    if (response) {
-      const fresh = {
-        fetchedAt: nowMs,
-        scoped: parseScopedBuckets(response),
-        global: parseGlobalBuckets(response),
-      };
-      writeCache(fresh);
-      return fresh;
-    }
+    const parsed = JSON.parse(readFileSync(join(CODEX_HOME, "auth.json"), "utf-8"));
+    const tokens = parsed.tokens ?? {};
+    if (!tokens.access_token) return null;
+    return { token: tokens.access_token, accountId: tokens.account_id ?? "" };
   } catch {
-    // 네트워크·토큰 오류 → 이전 캐시 유지
+    return null;
   }
-  // 실패도 TTL 스탬프를 남긴다 — 안 그러면 매 렌더마다 재시도해 최대 API_TIMEOUT_MS씩 지연된다 (CX#1)
-  const stamped = { scoped: [], global: {}, ...(cached ?? {}), fetchedAt: nowMs };
-  writeCache(stamped);
-  return stamped;
+}
+
+// primary_window(주간 등)·secondary_window(5h 등)를 창 길이로 라벨링
+function windowLabel(seconds) {
+  if (!Number.isFinite(seconds)) return "";
+  if (seconds >= DAYS_7_SEC) return "wk";
+  if (seconds <= HOURS_5_SEC) return "5h";
+  return `${Math.round(seconds / 3600)}h`;
+}
+
+function parseCodexBuckets(response) {
+  const out = [];
+  for (const w of [response?.rate_limit?.primary_window, response?.rate_limit?.secondary_window]) {
+    const pct = clampPct(w?.used_percent);
+    if (pct == null) continue;
+    const suffix = windowLabel(w.limit_window_seconds);
+    out.push({ label: suffix ? `codex ${suffix}` : "codex", percent: pct, resetsAt: w.reset_at ?? null });
+  }
+  return out;
+}
+
+async function fetchCodexUsage() {
+  const auth = readCodexAuth();
+  if (!auth) return null;
+  const res = await fetch(CODEX_USAGE_URL, {
+    headers: {
+      Authorization: `Bearer ${auth.token}`,
+      "ChatGPT-Account-Id": auth.accountId,
+      Accept: "application/json",
+    },
+    signal: AbortSignal.timeout(API_TIMEOUT_MS),
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+// 캐시 슬롯 하나를 TTL 기준으로 갱신 — 실패해도 스탬프를 남겨 매 렌더 재시도를 막는다 (CX#1)
+async function refreshSlot(cached, nowMs, disabled, fetcher, parser, empty) {
+  if (cached && nowMs - (cached.fetchedAt ?? 0) < CACHE_TTL_MS) return cached;
+  if (disabled) return cached;
+  try {
+    const response = await fetcher();
+    if (response) return { fetchedAt: nowMs, ...parser(response) };
+  } catch {
+    // 네트워크·토큰 오류 → 이전 값 유지
+  }
+  return { ...empty, ...(cached ?? {}), fetchedAt: nowMs };
+}
+
+async function loadUsage(clientVersion, nowMs) {
+  const cache = readCache() ?? {};
+  // 구 캐시 형식(최상위 fetchedAt)은 anthropic 슬롯으로 승격
+  const prevAnthropic = cache.anthropic ?? (cache.fetchedAt ? cache : null);
+  const [anthropic, codex] = await Promise.all([
+    refreshSlot(prevAnthropic, nowMs, apiDisabled, () => fetchUsage(clientVersion),
+      (r) => ({ scoped: parseScopedBuckets(r), global: parseGlobalBuckets(r) }), { scoped: [], global: {} }),
+    refreshSlot(cache.codex ?? null, nowMs, apiDisabled || codexDisabled, fetchCodexUsage,
+      (r) => ({ buckets: parseCodexBuckets(r) }), { buckets: [] }),
+  ]);
+  const next = { anthropic, codex };
+  if (JSON.stringify(next) !== JSON.stringify({ anthropic: cache.anthropic, codex: cache.codex })) writeCache(next);
+  return next;
 }
 
 async function main() {
@@ -223,15 +278,15 @@ async function main() {
   }
 
   const usage = await loadUsage(stdin.version || DEFAULT_CLIENT_VERSION, nowMs);
-  const fiveHour = stdin.rate_limits?.five_hour ?? usage?.global?.five_hour;
-  const sevenDay = stdin.rate_limits?.seven_day ?? usage?.global?.seven_day;
+  const fiveHour = stdin.rate_limits?.five_hour ?? usage.anthropic?.global?.five_hour;
+  const sevenDay = stdin.rate_limits?.seven_day ?? usage.anthropic?.global?.seven_day;
 
   const fhPct = clampPct(fiveHour?.used_percentage);
   if (fhPct != null) segments.push(gauge("5h", fhPct, fiveHour.resets_at, nowMs, WARN_PCT, DANGER_PCT));
   const sdPct = clampPct(sevenDay?.used_percentage);
   if (sdPct != null) segments.push(gauge("wk", sdPct, sevenDay.resets_at, nowMs, WARN_PCT, DANGER_PCT));
 
-  for (const b of usage?.scoped ?? []) {
+  for (const b of [...(usage.anthropic?.scoped ?? []), ...(usage.codex?.buckets ?? [])]) {
     segments.push(gauge(b.label, b.percent, b.resetsAt, nowMs, WARN_PCT, DANGER_PCT));
   }
 

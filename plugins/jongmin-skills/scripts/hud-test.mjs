@@ -23,7 +23,8 @@ function expect(cond, msg) { (cond ? pass : fail)(msg); }
 
 const isoDir = mkdtempSync(join(tmpdir(), "jongmin-hud-test-"));
 const cacheDir = join(isoDir, "cache");
-const env = { ...process.env, CLAUDE_CONFIG_DIR: isoDir, JONGMIN_HUD_NO_API: "1", JONGMIN_HUD_CACHE_DIR: cacheDir };
+const codexHome = join(isoDir, "codex-home");
+const env = { ...process.env, CLAUDE_CONFIG_DIR: isoDir, CODEX_HOME: codexHome, JONGMIN_HUD_NO_API: "1", JONGMIN_HUD_CACHE_DIR: cacheDir };
 
 function run(script, args, input) {
   return spawnSync(process.execPath, [script, ...args], { input, encoding: "utf-8", env, timeout: 15_000 });
@@ -60,13 +61,21 @@ expect(r.status === 0 && /X\[0m\[2m \| /.test(r.stdout) && /ctx.*91%/.test(r.s
 // API 차단 상태에서도 캐시된 모델 버킷은 표시한다 (실패 시 마지막 성공 캐시 유지 계약)
 mkdirSync(cacheDir, { recursive: true });
 writeFileSync(join(cacheDir, "usage-cache.json"), JSON.stringify({
-  fetchedAt: Date.now(),
-  scoped: [{ label: "Fable", percent: 78, resetsAt: new Date((nowSec + 30 * 3600 + 90) * 1000).toISOString(), isActive: true }],
-  global: {},
+  anthropic: { fetchedAt: Date.now(), scoped: [{ label: "Fable", percent: 78, resetsAt: new Date((nowSec + 30 * 3600 + 90) * 1000).toISOString(), isActive: true }], global: {} },
+  codex: { fetchedAt: Date.now(), buckets: [{ label: "codex wk", percent: 20, resetsAt: nowSec + 4 * 24 * 3600 + 20 * 3600 + 90 }] },
 }));
 r = run(RENDERER, [], sample);
 expect(/Fable\x1b\[0m \[.*78%.*\(1d6h\)/.test(r.stdout), "renderer shows cached model-scoped bucket");
+expect(/codex wk\x1b\[0m \[.*20%.*\(4d20h\)/.test(r.stdout), "renderer shows cached codex bucket");
+expect(r.stdout.indexOf("Fable\x1b[0m [") < r.stdout.indexOf("codex wk") && r.stdout.indexOf("codex wk") < r.stdout.indexOf("ctx"), "renderer orders model bucket, codex, ctx");
+// 구 캐시 형식(최상위 fetchedAt)도 읽는다
+writeFileSync(join(cacheDir, "usage-cache.json"), JSON.stringify({ fetchedAt: Date.now(), scoped: [{ label: "Old", percent: 33, resetsAt: null, isActive: true }], global: {} }));
+r = run(RENDERER, [], sample);
+expect(/Old\x1b\[0m \[.*33%/.test(r.stdout), "renderer reads legacy cache shape");
 rmSync(cacheDir, { recursive: true, force: true });
+// codex auth가 없으면 codex 세그먼트를 생략한다
+r = run(RENDERER, [], sample);
+expect(r.status === 0 && !/codex/.test(r.stdout), "renderer omits codex when auth.json is absent");
 
 // 모델명·라벨의 개행은 한 줄 계약을 깨지 않는다 (CX#5)
 r = run(RENDERER, [], JSON.stringify({ model: { display_name: "A\nB" }, context_window: { used_percentage: 1 } }));
@@ -74,16 +83,23 @@ expect(r.status === 0 && r.stdout.trim().split("\n").length === 1 && /A B/.test(
 
 // API 실패도 TTL 스탬프를 남겨 매 렌더 재시도를 막고, 이전 버킷은 유지한다 (CX#1)
 writeFileSync(join(isoDir, ".credentials.json"), JSON.stringify({ claudeAiOauth: { accessToken: "dummy" } }));
+mkdirSync(codexHome, { recursive: true });
+writeFileSync(join(codexHome, "auth.json"), JSON.stringify({ tokens: { access_token: "dummy", account_id: "acc" } }));
 mkdirSync(cacheDir, { recursive: true });
-writeFileSync(join(cacheDir, "usage-cache.json"), JSON.stringify({ fetchedAt: 0, scoped: [{ label: "Fable", percent: 50, resetsAt: null, isActive: true }], global: {} }));
-const failEnv = { ...env, JONGMIN_HUD_NO_API: "0", JONGMIN_HUD_API_URL: "http://127.0.0.1:9/" };
+writeFileSync(join(cacheDir, "usage-cache.json"), JSON.stringify({
+  anthropic: { fetchedAt: 0, scoped: [{ label: "Fable", percent: 50, resetsAt: null, isActive: true }], global: {} },
+  codex: { fetchedAt: 0, buckets: [{ label: "codex wk", percent: 11, resetsAt: null }] },
+}));
+const failEnv = { ...env, JONGMIN_HUD_NO_API: "0", JONGMIN_HUD_API_URL: "http://127.0.0.1:9/", JONGMIN_HUD_CODEX_URL: "http://127.0.0.1:9/" };
 const t0 = Date.now();
 r = spawnSync(process.execPath, [RENDERER], { input: sample, encoding: "utf-8", env: failEnv, timeout: 15_000 });
 const failCache = JSON.parse(readFileSync(join(cacheDir, "usage-cache.json"), "utf-8"));
-expect(r.status === 0 && /Fable.*50%/.test(r.stdout), "renderer keeps previous bucket when API fails");
-expect(failCache.fetchedAt >= t0 && failCache.scoped[0]?.percent === 50, "renderer stamps cache TTL on API failure");
+expect(r.status === 0 && /Fable.*50%/.test(r.stdout) && /codex wk.*11%/.test(r.stdout), "renderer keeps previous buckets when APIs fail");
+expect(failCache.anthropic.fetchedAt >= t0 && failCache.anthropic.scoped[0]?.percent === 50, "renderer stamps anthropic cache TTL on failure");
+expect(failCache.codex.fetchedAt >= t0 && failCache.codex.buckets[0]?.percent === 11, "renderer stamps codex cache TTL on failure");
 rmSync(cacheDir, { recursive: true, force: true });
 rmSync(join(isoDir, ".credentials.json"), { force: true });
+rmSync(codexHome, { recursive: true, force: true });
 
 // --- 2) 설치기 왕복 ---
 const settingsPath = join(isoDir, "settings.json");

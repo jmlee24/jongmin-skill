@@ -49,6 +49,7 @@ DONE - restart Claude Code (or open a new session) to see the HUD
 ## 표시 항목과 데이터 출처
 
 - 모델명 옆 effort 레벨과 `5h`, `wk`, `ctx`: 클코가 statusline stdin으로 주는 `effort.level`·`rate_limits`·`context_window` — 네트워크 없음
+- codex 사용량(`codex wk 20%`): `~/.codex/auth.json` 토큰으로 ChatGPT 사용량 백엔드를 60초당 최대 1회 호출. auth.json이 없으면 생략, `JONGMIN_HUD_NO_CODEX=1`로 끌 수 있다
 - 모델별 주간 버킷(예: `Fable 78%`): stdin에 없어 `api.anthropic.com/api/oauth/usage`를 60초당
   최대 1회 호출 (`limits[].kind === "weekly_scoped"`). 토큰은 `<configDir>/.credentials.json`
   (macOS는 Keychain). 실패하면 마지막 성공값을 유지하고, 토큰이 없으면 항목을 생략한다
