@@ -10,8 +10,12 @@ import { fileURLToPath } from "node:url";
 const GUARD = path.join(path.dirname(fileURLToPath(import.meta.url)), "loop-stop-guard.mjs");
 const SANDBOX = fs.mkdtempSync(path.join(os.tmpdir(), "guard-test-"));
 const ACTIVE = path.join(SANDBOX, ".claude", "jongmin-ledgers", "active");
+const HOOK_LOG = path.join(SANDBOX, ".claude", "jongmin-ledgers", "hook.log");
 const CWD_WIN = "C:\\Users\\jongm\\proj-a";
 const CWD_OTHER = "C:\\Users\\jongm\\proj-b";
+// Windows에서 chmod는 읽기 전용 속성만 토글한다 — 저장 실패 주입/복구용 (T27~T30)
+const MODE_READONLY = 0o444;
+const MODE_WRITABLE = 0o666;
 
 // 자기 침습 차단 단언용 — 실장부 스냅샷(이름+크기+mtime)을 실행 전에 고정
 // 파일 수만 비교하면 내용 변경·동수 rename을 놓친다 (cx-s1 반영)
@@ -55,6 +59,10 @@ function run(input = {}) {
 function read(name) { return JSON.parse(fs.readFileSync(path.join(ACTIVE, name), "utf-8")); }
 function exists(name) { return fs.existsSync(path.join(ACTIVE, name)); }
 function raw(name) { return fs.readFileSync(path.join(ACTIVE, name), "utf-8"); }
+// hook.log는 reset()이 지우지 않고 누적된다 — 실행 전후 줄 수 차이로 새 줄만 본다
+function logLines() {
+  try { return fs.readFileSync(HOOK_LOG, "utf-8").split("\n").filter(Boolean); } catch { return []; }
+}
 
 // 예외가 나도 샌드박스 정리와 실장부 게이트가 반드시 돈다 (cx-s1 반영)
 let crashed = null;
@@ -180,6 +188,25 @@ check("T25 empty-completed retires as stalled", staleSt?.exit_signal === "stalle
 reset(); state("a.json", { active: false, exit_signal: "completed" });
 r = run();
 check("T26 inactive empty-completed still blocked", r?.decision === "block");
+
+// T27~T30 장부 저장 실패 -> 차단하지 않고 허용(fail-open) + hook.log 관측 (D8)
+// 저장이 실패하면 iteration이 디스크에 오르지 않아 max_iterations 은퇴가 영원히 오지 않는다.
+// 주입: 대상 .json에 읽기 전용 속성을 걸면 readFileSync/tmp 쓰기는 성공하고
+// renameSync(tmp, file)만 EPERM으로 실패한다 — 프로덕션 코드에 훅을 넣지 않는 유일한 경로.
+reset(); state("a.json");
+const wfFile = path.join(ACTIVE, "a.json");
+fs.chmodSync(wfFile, MODE_READONLY);
+snap = raw("a.json");
+const logBefore = logLines().length;
+const wfOut = run();
+const wfLines = logLines().slice(logBefore);
+check("T27 write-fail allow", wfOut === null, `got=${JSON.stringify(wfOut)}`);
+check("T28 write-fail ledger intact", raw("a.json") === snap && !exists("a.json.stale"));
+check("T29 write-fail logged once with cause",
+  wfLines.filter((l) => /write-fail a\.json: \S/.test(l)).length === 1, `lines=${wfLines.join(" | ")}`);
+// 반복 호출해도 계속 allow — 저장 불능 상태에서 매 Stop이 차단되던 D8의 핵심
+check("T30 write-fail stays allow on repeat", run() === null && run() === null);
+fs.chmodSync(wfFile, MODE_WRITABLE); // 샌드박스 정리 전 속성 복구
 
 } catch (e) {
   crashed = e;

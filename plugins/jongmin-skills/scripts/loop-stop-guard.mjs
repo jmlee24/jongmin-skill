@@ -95,7 +95,12 @@ for (const name of files) {
   if (st.no_progress_count >= (st.no_progress_limit || 3)) { retire(file, st, "no-progress"); continue; }
 
   st.updated_at = new Date().toISOString();
-  try { writeState(file, st); } catch { log(`write-fail ${name}`); }
+  // 저장 실패 = 가드가 iteration을 디스크에 진전시킬 수 없는 상태. 그대로 차단하면 다음 Stop도
+  // 같은 값에서 시작해 max-iterations·no-progress 은퇴가 영원히 오지 않는다(D8). 프로세스는 매 Stop마다
+  // 새로 뜨므로 메모리 카운트·재시도로는 복구할 수 없다 — hooks.json의 node-not-found와 같은
+  // fail-open+로그 원칙으로 이 장부는 통과시키고 관측만 남긴다.
+  try { writeState(file, st); }
+  catch (e) { log(`write-fail ${name}: ${e.code || e.message}`); continue; }
 
   const reason = st.mode === "sortie"
     ? `[jongmin-sortie 가드 ${st.iteration}/${max}] 데드라인 전 자의적 정지 금지. 유예 장부 규칙(보수 기본값+4요소 기록, 중대 판단은 CX 반박 자문 공동)으로 전진하라. 데드라인 도달 또는 전 갈래 보류 상태면 귀환 보고를 작성하고 state 파일에 exit_signal을 기록한 뒤 정지하라 (completed면 oracle_status·review_status 동반 기록 필수 — 없으면 가드가 계속 되민다).`
