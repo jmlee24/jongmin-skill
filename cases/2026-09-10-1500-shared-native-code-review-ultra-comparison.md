@@ -3,7 +3,8 @@ skill: shared/
 project: jongmin-skills 설계 비교 (T1 문서 확인 + CX gpt-6-astra 자문, 2026-09-10 — 클코 네이티브 /code-review·ultra·ReportFindings·Agent isolation)
 observed-version: 1.11.0
 severity: major
-status: pending
+status: applied
+applied-version: 1.12.0
 related: 2026-09-08-1500-shared-ultracode-workflow-comparison
 ---
 ## 실패 형태
@@ -48,5 +49,5 @@ codex-lane 예시 10→6 = 47→32행. 신설 ③이 +9행이라 순감축은 �
 **기각**: quick/deep을 low/high로 개명(축이 다름 — 진행 차단 vs 커버리지) / ultra 자동·상시·필수 게이트화 /
 ultra를 CX 대체재로(벤더 다양성 ≠ 독립 컨텍스트) / 네이티브 CONFIRMED 자동 승격 / ReportFindings 도구·fleet 복제 /
 `--fix`·`--post` 기본 연결 / `/rc`·`/simplify`·`/security-review`를 완료 판정 대체재로.
-**적용 근거 현황**: 재현 0건·독립 사례 1건(이 비교) — 배치 검토 시 실전 웨이브 1회 실측이 선행 조건. 규약 모순은
-없음(ultracode 케이스와 같은 "네이티브 갭만 채움" 원칙 적용).
+**적용 근거 현황**: 사용자 판정(2026-09-10) — "기존 스킬 변경이 아니라 새 기능 추가"로 즉시 적용 승인. 채택 후보 1~6 전부
+1.12.0에 반영, 압축은 리뷰 관련 절에 부분 적용. 실전 웨이브 실측은 후속 케이스로 수집한다.

@@ -6,24 +6,22 @@
 
 T1 접합의 병목은 CX 실행이 아니라 **독해**다. CX 프롬프트에 다음 형식을 요구한다:
 
-- **Top 5 findings 이내** + 항목별 severity(critical/major/minor) + T1이 실측할 검증법
-- 장문 서술 금지 — 근거는 항목당 2~3문장
+- 반박·리뷰형은 **Top 5 이내**, severity(critical/major/minor) 내림차순. 명세 생성·규명형 임무는
+  프롬프트에서 산출 형식을 별도 지정한다 (실측: 리뷰 형식만 있어 매번 형식을 지어 줘야 했던 사례)
+- 항목 = `short_summary(60자, 주장만)` + `파일:라인 @ SHA [생존성]` + 근거 2~3문장 +
+  `failure_scenario: 구체 입력·상태 → 기대와 다른 결과`(비동작 지적은 구체 영향 또는 N/A+사유) +
+  `T1 verify: 재현/반증 절차`. CX 정적 소견의 verdict는 항상 PLAUSIBLE — T1 실측 판정과 섞지 않는다
 - 자문 지위 명시: "자동 채택되지 않으며 T1이 실측으로 접합한다"
-- 근거를 인용하는 산출에는 **근거 기준 SHA + 생존성 상태**(LIVE/STALE/DEAD/UNVERIFIED —
-  [evidence-liveness.md](evidence-liveness.md))를 요구한다. freshness rule(아래)은 리뷰 산출물의
-  시점 신선도, 생존성은 인용 대상 자체의 검사 — 별개다
-- Top 5 형식은 **반박·리뷰형 임무 기본**이다 — 명세 생성·규명형 임무는 프롬프트에서 산출
-  형식을 별도 지정한다 (실측: 명세 임무에 리뷰 형식만 있어 매번 형식을 지어 줘야 했던 사례)
+- 생존성(LIVE/STALE/DEAD/UNVERIFIED)은 [evidence-liveness.md](evidence-liveness.md). freshness rule(아래)은
+  산출 시점의 신선도, 생존성은 인용 대상 자체의 검사 — 서로 대체하지 않는다
 
-산출 형식 실물 예시 (판정 가능한 수준의 축약본):
+산출 형식 실물 예시:
 
 ```markdown
-1. **major** — retire()가 빈 completed를 은퇴시킬 때 exit_signal을 stalled로
-   덮지 않아 .stale에 허위 완료 기록이 남는다.
-   T1 검증법: 필드 없는 completed로 run()을 4회 호출 후 .stale JSON의 exit_signal 확인.
-2. **minor** — 로그는 실패 환경에서 무한 증가하나 수십 KB/day 수준.
-   T1 검증법: node를 숨긴 채 훅 100회 반복 후 wc -l hook.log.
-(이하 Top 5까지 — 항목당 2~3문장, 자동 채택되지 않음)
+1. **major** — retire()가 빈 completed 은퇴 시 exit_signal을 덮지 않음 | verdict: PLAUSIBLE
+   scripts/loop-state.mjs:212 @ 7db63d5 [LIVE]; 근거: stalled 분기가 completed 비어 있음을 검사하지 않는다.
+   failure_scenario: 필드 없는 completed로 run() 4회 → .stale에 exit_signal "completed" 허위 기록.
+   T1 verify: 위 입력으로 실행 후 .stale JSON의 exit_signal 확인.
 ```
 
 ## freshness rule — 백그라운드 리뷰 접합 전 신선도 검사
@@ -90,8 +88,9 @@ resume은 `--sandbox`를 받지 않는다 (codex-cli 0.149 실측: unexpected ar
 
 ## 데드라인·생존 판정 — kill은 최후 수단
 
-codex에는 타임아웃 플래그가 없다. 기본 15분은 **점검 시점**이지 kill 시점이 아니다
-(큰 diff 리뷰는 15분을 정상적으로 넘긴다 — 실측된 사망 오판 사례에서 개정):
+codex에는 타임아웃 플래그가 없다. 1차 신호는 `run_in_background` **완료 알림**이다 — 폴링하지 않는다.
+알림 없이 15분이 지나면 **점검 시점**이지 kill 시점이 아니다 (큰 diff 리뷰는 15분을 정상적으로 넘긴다 —
+실측된 사망 오판 사례에서 개정):
 
 1. **생존 판정**: `events.jsonl` 크기/mtime 증가, stderr 로그 변화 = 살아 있음 → 15분 연장
 2. **무신호 시에도 kill 전에**: `--output-last-message` 부분 산출 확인 → `thread_id` 회수 후

@@ -1,10 +1,8 @@
 # 리뷰 레인 프롬프트 템플릿
 
-`lane-reviewer` 에이전트(T2 — [model-tiers.md](model-tiers.md))로 발진한다. 에이전트 정의
-([agents/lane-reviewer.md](../agents/lane-reviewer.md))가 역할·도구·독립성의 단일 정의점이고,
-이 템플릿은 **호출 시 채우는 입력**이다 — [executor-prompt.md](executor-prompt.md)의 리뷰 쪽 대칭.
-리뷰는 스킬이 아니라 에이전트로만 실행한다: 스킬은 T1 세션 컨텍스트에서 돌아 구현자와
-컨텍스트를 공유하게 되고, 그것은 자기승인이다.
+패밀리 리뷰는 `lane-reviewer`(T2 — [model-tiers.md](model-tiers.md))로 발진한다. 역할·도구·독립성은
+[에이전트 정의](../agents/lane-reviewer.md), 호출 입력은 이 템플릿이 정본이다 ([executor-prompt.md](executor-prompt.md)의 대칭).
+모델이 발진하는 리뷰는 에이전트로만 — T1 컨텍스트의 스킬 리뷰는 구현자와 컨텍스트를 공유해 자기승인이 된다.
 
 ```
 [리뷰 모드] change (착지된 커밋 범위 리뷰) | completion (완료 조건 독립 판정 — loop)
@@ -27,8 +25,8 @@
    리뷰어가 요청해도 주지 않는다.
 
 5) 출력
-   lane-reviewer 정의의 심각도별 목록 (파일:라인 + 근거 + 재현/반증 방법).
-   "문제 없음"도 수행한 검증 목록과 함께 — 검증 없는 승인은 산출물이 아니다.
+   lane-reviewer 「출력」 계약을 따른다 — 항목 필드(short_summary·failure_scenario·verdict)·심각도순·
+   "문제 없음"의 검증 근거 포함.
 ```
 
 리뷰 지적도 자동 채택되는 판정이 아니라 **T1이 실측할 주장**이다 (실측: 리뷰 근거를 executor가
@@ -42,5 +40,5 @@
 - `completion`: "완료 조건이 정말 충족됐는가" — 오라클이 실제로 그 조건을 검증하는지,
   green이 우연이 아닌지. loop 이중 종료 게이트의 독립 판정 입력.
 
-deep-audit은 이 템플릿을 쓰지 않는다 — SHA 범위 리뷰가 아니라 스냅샷 구조 감사이고
-판정 체계(CONFIRMED/PLAUSIBLE/REFUTED)가 다르다.
+deep-audit은 이 템플릿을 쓰지 않는다 — SHA 범위 리뷰가 아니라 스냅샷 구조 감사·항목별 이중 판정이다
+(verdict 어휘는 공유하되 절차는 합치지 않는다).

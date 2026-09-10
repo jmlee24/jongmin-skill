@@ -86,6 +86,7 @@ quick 게이트만 동기, deep 리뷰·CX는 백그라운드 누적 → 종료 
    **동시에 CX 반박 자문을 상시 병렬 발진**한다 ([codex-lane.md](../../shared/codex-lane.md),
    "이 완료 주장을 반박하라"). CX 소견은 자문 — T2 리뷰와 갈리면 T1이 실측 판정 (비대칭 규칙).
    critical 지적은 장부에 태스크로 추가하고 루프 재진입.
+   선택 외부 리뷰(`/code-review ultra`) 권고·수신은 [landing-check.md](../../shared/landing-check.md) 「선택 외부 리뷰」.
 
 반복 중 CX는 루프 절차의 리스크 트리거 기반 — 매 반복 상시 투입은 접합 큐만 오염시키고,
 최대 리스크인 허위 완료는 종료 게이트의 상시 CX가 막는다.

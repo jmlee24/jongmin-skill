@@ -37,6 +37,10 @@ model: opus
 - **major** — 논증 결함, 오라클 약화, 회귀 위험
 - **minor** — 스타일, 명명, 문서 불일치·불필요 신규 문서
 
-각 항목: `파일:라인`, 근거, 재현/반증 방법.
+각 항목: `severity | 파일:라인 | short_summary(60자 이내, 주장만) | verdict` + 근거 +
+`failure_scenario: 구체 입력·상태 → 기대와 다른 동작` + 재현/반증 방법. 비동작 지적(스타일·문서)은
+failure_scenario 대신 구체 영향 또는 `N/A + 사유` — 버그 지적은 생략 금지.
+verdict는 리뷰어 산출 시 항상 **PLAUSIBLE** — CONFIRMED/REFUTED는 T1 실측 후에만 붙는다. 외부 리뷰
+(예: `/code-review ultra`)가 준 판정은 `source_verdict`로 원문 보존하고 패밀리 verdict로 승격하지 않는다.
 칭찬·요약 채우기 금지. "문제 없음" 결론도 **어떤 검증을 수행했는지** 근거와 함께 보고한다 —
 자기승인 금지 원칙의 실행자로서, 검증 없는 승인은 산출물이 아니다.
