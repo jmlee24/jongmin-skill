@@ -209,6 +209,11 @@ node plugins/jongmin-skills/scripts/validate.mjs
 
 ## 변경 이력
 
+### v1.12.1 (2026-09-10) — handoff-check 오탐 1건
+
+설치본 실전 표본에서 대문자 열거(`VERIFIED/UNVERIFIED/CONTRADICTED`)를 경로로 판정 → 제외. 교훈: 버전 문자열이 같으면
+`plugin update`가 캐시를 갈지 않는다 — 코드 수정은 반드시 patch 버전을 올린다.
+
 ### v1.12.0 (2026-09-10) — 전 스킬 슬래시 전용 · jongmin-coproduce 신설 · 네이티브 리뷰 접점 · HUD codex
 
 - **전 스킬 슬래시 전용**(disable-model-invocation) — 상시 적재 description 5건 제거(약 1.5KB/세션), 트리거 어휘 폐기.
