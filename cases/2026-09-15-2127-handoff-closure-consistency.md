@@ -34,3 +34,10 @@ related: 2026-08-21-1841-handoff-fact-conclusion-refutation (추정/측정 분�
 3. ledger.md 3절·conductor 2절 1줄: **레인 ID는 웨이브 접두(`W3-F`)로 유일** — time-ledger 덮어쓰기
    회피. 코드 층은 time-ledger append가 같은 lane+lane_start 재기록 시 경고(차단 아님).
 4. ledger.md 5절 실행 메타에 `T2 모델: <발진 시 명시한 별칭>` 1항 — 트레일러 표기 대조용.
+
+**관측 추가 (2026-09-14~15 다음 웨이브, 같은 프로젝트 — ③ 재현 2회째)**: time-ledger report가 같은 레인의
+재시도(deep → 재확인)를 마지막 쌍으로 덮어썼고 웨이브 간 레인명도 충돌. Codex 접합: 초안의 `--since` 필터만으로는
+부족 — 이벤트에 **wave·attempt 키**를 추가하고 report에 `--wave` 필터. 제안 3의 "웨이브 접두"를 이 형태로
+구체화: `time-ledger append <tsv> <lane> <event> [메모] --wave W3 --attempt 2` 또는 lane ID 규약 `W3-F#2`.
+2026-08-24-1210-shared-ledger-time-event-vocabulary가 예고한 덮어쓰기가 실전 2회 발생 — 그 케이스의 "실전 계측 후
+판정" 조건 충족.
